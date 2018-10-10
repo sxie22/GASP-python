@@ -158,6 +158,44 @@ class VaspEnergyCalculator(object):
         print('Setting energy of organism {} to {} '
               'eV/atom '.format(organism.id, organism.epa))
         dictionary[key] = organism
+    
+    def calculate_ef_ads(self, organism, E_sub, E_bulk):
+        
+        """
+        Calculates the formation energy of adsorbed structure for an organism.
+                  Ef_ads = E_org/N_2d - n. E_sub/N_2d - E_bulk
+        
+        Args:
+        
+        organism : the organism after energy calculation is done
+        
+        E_sub : The total energy of the primitive cell of the substrate
+        
+        E_bulk : epa of the stable bulk structure at the composition
+        """
+        
+        enthalpy = organism.total_energy
+        cell = organism.cell
+        
+        # Routine to obtain number of atoms in the 2D layer
+        # TODO: Add this to a different class in __init__
+        all_species = [str(i) for i in cell.species]
+        elements_2D = parameters['Species']['twod_species']
+        N_2d = 0
+        all_species.reverse()
+        for atom in all_species:
+            if atom in elements_2D:
+                N_2d = N_2d+1
+            else:
+                break
+                
+        # Routine to find n, factor to multiply to the substrate energy
+        # We get n from the lat_match code. 
+        # TODO: Add lat_match code here and save necessary parameters
+        
+        Ef_ads = enthalpy/N_2d - factor*E_sub/N_2d - E_bulk
+        
+        
 
 
 class LammpsEnergyCalculator(object):
