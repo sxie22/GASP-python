@@ -20,7 +20,7 @@ from pymatgen.core.structure import Structure
 from pymatgen.core.lattice import Lattice
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-__author__ = "Kiran Mathew, Arunima Singh"
+__author__ = "Kiran Mathew, Arunima Singh, V. S. Chaitanya Kolluru"
 __copyright__ = "Copyright 2018, Henniggroup"
 __maintainer__ = "V. S. Chaitanya Kolluru"
 __email__ = "chaitanya.ismu@gmail.com"
