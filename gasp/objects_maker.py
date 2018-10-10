@@ -79,6 +79,8 @@ def make_objects(parameters):
         geometry = geo.Wire(parameters['Geometry'])
     elif parameters['Geometry']['shape'] == 'sheet':
         geometry = geo.Sheet(parameters['Geometry'])
+    elif parameters['Geometry']['shape'] == 'interface'
+        geometry = geo.Substrate_2D(parameters['Geometry'])
     # TODO: add any other non-bulk geometries here
     else:
         geometry = geo.Bulk()
