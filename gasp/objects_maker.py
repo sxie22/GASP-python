@@ -265,6 +265,41 @@ def make_objects(parameters):
 
     return objects_dict
 
+def get_lat_match_params(parameters):
+    """
+    Obtains the lattice matching constraints from input yaml files as a
+    dictionary
+
+    Sets default constraints if none present
+    """
+
+    lat_match_params = {}
+    keys = ['max_area', 'max_mismatch', 'max_angle_diff', 'r1r2_tol',
+                            'separation', 'nlayers_substrate', 'nlayers_2d', 'sd_layers']
+    match_constraints = [100, 0.05, 2, 0.06, 2, 1, 1, 1]
+    for key, param in zip(keys, match_constraints):
+        lat_match_params[key] = param
+
+    if 'LatticeMatch' not in parameters:
+        print ('No lattice match constraints provided. Using defaults...')
+    else:
+        for key in keys:
+            if key in parameters['LatticeMatch']:
+                lat_match_params[key] = parameters['LatticeMatch'][key]
+
+    return lat_match_params
+
+def get_prim_sub_data(parameters):
+    """
+    Obtains the total energy (enthalpy) of primitive substrate calculation
+    and number of atoms in the primitive substrate cell
+    """
+    if 'Substrate_prim_calc' in parameters:
+        E_sub_prim = parameters['Substrate_prim_calc']['E_sub_prim']
+        n_sub_prim = parameters['Substrate_prim_calc']['n_sub_prim']
+        return E_sub_prim, n_sub_prim
+    else:
+        return None, None
 
 def make_organism_creators(parameters, composition_space, constraints):
     """
