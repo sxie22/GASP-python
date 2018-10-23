@@ -21,6 +21,7 @@ do_energy_calculation() method.
 """
 
 from gasp.general import Cell
+from gasp.objects_maker import get_prim_sub_data
 
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.periodic_table import Element
@@ -60,7 +61,7 @@ class VaspEnergyCalculator(object):
         self.potcar_files = potcar_files
 
     def do_energy_calculation(self, organism, dictionary, key,
-                              composition_space):
+                        composition_space, E_sub_prim=None, n_sub_prim=None):
         """
         Calculates the energy of an organism using VASP, and stores the relaxed
         organism in the provided dictionary at the provided key. If the
@@ -92,7 +93,12 @@ class VaspEnergyCalculator(object):
 
         # sort the organism's cell and write to POSCAR file
         organism.cell.sort()
-        organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
+        if geometry.shape == 'interface':
+            n_sub = organism.n_sub
+            z_upper_bound = organism.z_upper_bound
+            write_poscar(organism.cell, n_sub, z_upper_bound, job_dir_path)
+        else:
+            organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
 
         # get a list of the element symbols in the sorted order
         symbols = []
@@ -155,47 +161,36 @@ class VaspEnergyCalculator(object):
         organism.cell = relaxed_cell
         organism.total_energy = enthalpy
         organism.epa = enthalpy/organism.cell.num_sites
+        if E_sub_prim is not None and n_sub_prim is not None:
+            n_iface = relaxed_cell.num_sites
+            n_sub = organism.n_sub
+            n_twod = n_iface - n_sub
+            factor = n_sub/n_sub_prim
+            ef_ads = enthalpy/n_twod - factor*E_sub_prim/n_twod
+            organism.ef_ads = ef_ads
+
         print('Setting energy of organism {} to {} '
               'eV/atom '.format(organism.id, organism.epa))
         dictionary[key] = organism
-    
-    def calculate_ef_ads(self, organism, E_sub, E_bulk):
-        
-        """
-        Calculates the formation energy of adsorbed structure for an organism.
-                  Ef_ads = E_org/N_2d - n. E_sub/N_2d - E_bulk
-        
-        Args:
-        
-        organism : the organism after energy calculation is done
-        
-        E_sub : The total energy of the primitive cell of the substrate
-        
-        E_bulk : epa of the stable bulk structure at the composition
-        """
-        
-        enthalpy = organism.total_energy
-        cell = organism.cell
-        
-        # Routine to obtain number of atoms in the 2D layer
-        # TODO: Add this to a different class in __init__
-        all_species = [str(i) for i in cell.species]
-        elements_2D = parameters['Species']['twod_species']
-        N_2d = 0
-        all_species.reverse()
-        for atom in all_species:
-            if atom in elements_2D:
-                N_2d = N_2d+1
-            else:
-                break
-                
-        # Routine to find n, factor to multiply to the substrate energy
-        # We get n from the lat_match code. 
-        # TODO: Add lat_match code here and save necessary parameters
-        
-        Ef_ads = enthalpy/N_2d - factor*E_sub/N_2d - E_bulk
-        
-        
+
+
+    def write_poscar(iface, n_sub, z_upper_bound, job_dir_path):
+        '''
+        Returns POSCAR of the interface with sd flags and comment line
+
+        '''
+        n_iface = iface.num_sites
+        n_twod = n_iface - n_sub
+        comment = 'N_sub %d    N_twod %d' % (N_sub, N_twod)
+
+        sd_flags = np.zeros_like(iface.frac_coords)
+        z_coords_iface = iface.frac_coords[:, 2]
+        sd_flags[np.where(z_coords_iface >= z_upper_bound)] = np.ones((1, 3))
+        new_sd = []
+        for i in sd_flags:
+            new_sd.append([bool(x) for x in i])
+        poscar = Poscar(iface, comment, selective_dynamics=new_sd)
+        poscar.write_file(filename=job_dir_path + '/POSCAR')
 
 
 class LammpsEnergyCalculator(object):
