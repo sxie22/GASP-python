@@ -33,6 +33,8 @@ class Interface():
     of two different cells.
     '''
 
+    match_parameters = parameters['LatticeMatch']
+
     def get_trans_matrices(n):
         """
         Returns a list of 2x2 transformation matrices for the
@@ -275,16 +277,6 @@ class Interface():
             print('Corresponding u,v & angle mismatches:\n{0}, {1}, {2}\n'.format(uv_opt[3],
                                                                                   uv_opt[4],
                                                                                   uv_opt[5]))
-            if opt==True:
-                print('\nSmallest area matched uv')
-                return [uv_opt[0]], [uv_opt[1]]
-            else:
-                all_2d, all_sub = [], []
-                for i in range(len(uv_all)):
-                    all_2d.append(uv_all[i][0])
-                    all_sub.append(uv_all[i][1])
-                print('\nAll matched uv')
-                return all_sub, all_2d          # returns list of ab1, ab2 arrays
 
             # uv_all is written to a dictionary
             matches_dict = {}
@@ -310,9 +302,12 @@ class Interface():
                     f.write('Max angle difference: {0} \narea ratio tol(r1r2): {1}\n\n'.format(
                                                     max_angle_diff, r1r2_tol
                                                     ))
-                    f.write(matches_dict)                                
+                    f.write(matches_dict)
+
+            print('\nSmallest area matched uv\n')
+            return uv_opt[0], uv_opt[1]
         else:
-            print('\n NO MATCH FOUND')
+            print('\n NO MATCH FOUND\n')
             return None, None
 
 
@@ -415,7 +410,7 @@ class Interface():
 
     def get_aligned_lattices(slab_sub, slab_2d, max_area=200,
                              max_mismatch=0.05,
-                             max_angle_diff=1, r1r2_tol=0.2, opt=False):
+                             max_angle_diff=1, r1r2_tol=0.2):
         """
         given the 2 slab structures and the alignment paramters, return
         slab structures with lattices that are aligned with respect to each
@@ -423,63 +418,110 @@ class Interface():
         """
 
         # get the matching substrate and 2D material lattices
-        uv_substrate_all, uv_mat2d_all = get_matching_lattices(slab_sub, slab_2d,
+        uv_substrate, uv_mat2d = get_matching_lattices(slab_sub, slab_2d,
                                                        max_area=max_area,
                                                        max_mismatch=max_mismatch,
                                                        max_angle_diff=max_angle_diff,
-                                                       r1r2_tol=r1r2_tol, opt=opt)
+                                                       r1r2_tol=r1r2_tol)
         if not uv_substrate_all and not uv_mat2d_all:
             print("no matching u and v, trying adjusting the parameters")
             sys.exit()
-        substrate_set, mat2d_set = [], []
-        for uv_substrate, uv_mat2d in zip(uv_substrate_all,  uv_mat2d_all):
-            substrate = Structure.from_sites(slab_sub)
-            mat2d = Structure.from_sites(slab_2d)
 
-            # map the intial slabs to the newly found matching lattices
-            substrate_latt = Lattice(np.array(
+        substrate = Structure.from_sites(slab_sub)
+        mat2d = Structure.from_sites(slab_2d)
+
+        # map the intial slabs to the newly found matching lattices
+        substrate_latt = Lattice(np.array(
                 [
                     uv_substrate[0][:],
                     uv_substrate[1][:],
                     substrate.lattice.matrix[2, :]
                 ]))
-            # to avoid numerical issues with find_mapping
-            mat2d_fake_c = mat2d.lattice.matrix[2, :] / np.linalg.norm(
+        # to avoid numerical issues with find_mapping
+        mat2d_fake_c = mat2d.lattice.matrix[2, :] / np.linalg.norm(
                 mat2d.lattice.matrix[2, :]) * 5.0
-            mat2d_latt = Lattice(np.array(
+        mat2d_latt = Lattice(np.array(
                 [
                     uv_mat2d[0][:],
                     uv_mat2d[1][:],
                     mat2d_fake_c
                 ]))
 
-            mat2d_latt_fake = Lattice(np.array(
+        mat2d_latt_fake = Lattice(np.array(
                 [
                     mat2d.lattice.matrix[0, :],
                     mat2d.lattice.matrix[1, :],
                     mat2d_fake_c
                 ]))
 
-    	    # Supercell matrix for primitive lattices -> match lattices
-            _, __, scell_1 = substrate.lattice.find_mapping(substrate_latt,
+    	# Supercell matrix for primitive lattices -> match lattices
+        _, __, scell_1 = substrate.lattice.find_mapping(substrate_latt,
                                                           ltol=0.05,
                                                           atol=max_angle_diff)
-            _, __, scell_2 = mat2d_latt_fake.find_mapping(mat2d_latt,
+        _, __, scell_2 = mat2d_latt_fake.find_mapping(mat2d_latt,
                                                         ltol=0.05,
                                                         atol=max_angle_diff)
-            scell_1[2] = np.array([0, 0, 1])
-            substrate.make_supercell(scell_1)
-            scell_2[2] = np.array([0, 0, 1])
-            mat2d.make_supercell(scell_2)
+        scell_1[2] = np.array([0, 0, 1])
+        substrate.make_supercell(scell_1)
+        scell_2[2] = np.array([0, 0, 1])
+        mat2d.make_supercell(scell_2)
 
-            # modify the substrate lattice
-            lmap = Lattice(np.array(
+        # modify the substrate lattice
+        lmap = Lattice(np.array(
                 [
                     substrate.lattice.matrix[0, :],
                     substrate.lattice.matrix[1, :],
                     mat2d.lattice.matrix[2, :]
                 ]))
-            mat2d.modify_lattice(lmap)
-            substrate_set.append(substrate)
-            mat2d_set.append(mat2d)
-        return substrate_set, mat2d_set
+        mat2d.modify_lattice(lmap)
+
+        return substrate, mat2d
+
+    def run_lat_match(substrate, twod_layer, match_constraints):
+
+        '''
+        Runs the lattice matching algorithm on a substrate and a 2D materials
+
+        Args:
+
+            substrate - substrate Cell
+
+            twod_layer - 2D layer Cell
+
+            match_constraints - dictionary containing max area, max mismatch of u
+            or v, max angle difference, area ratio tolerence, seperation at the
+            interface, number of layers for substrate and 2D. Ex: {'max_area':200,
+            'max_mismatch':0.05, 'max_angle_diff':2, 'r1r2_tol':0.06, 'separation':
+            3, 'nlayers_substrate':1, 'nlayers_2d':1, 'sd_layers':1}
+        '''
+        # variables from the keys
+        max_area = match_constraints['max_area']
+        max_mismatch = match_constraints['max_mismatch']
+        max_angle_diff = match_constraints['max_angle_diff']
+        r1r2_tol = match_constraints['r1r2_tol']
+        separation = match_constraints['separation']
+        nlayers_substrate = match_constraints['nlayers_substrate']
+        nlayers_2d = match_constraints['nlayers_2d']
+        sd_layers = match_constraints['sd_layers']
+
+        twod_prim = twod_layer.get_primitive_structure()
+        substrate_prim = substrate.get_primitive_structure()
+
+        #get aligned lattices
+        sub, mat2d = get_aligned_lattices(
+                                substrate_prim,
+                                mat2d_prim,
+                                max_area=max_area,
+                                max_mismatch=max_mismatch,
+                                max_angle_diff=max_angle_diff,
+                                r1r2_tol=r1r2_tol)
+        #If opt is set to true, returns only optimum structures uv.
+        #merge substrate and mat2d in all possible ways
+        hetero_interfaces = generate_all_configs(sub, mat2d,
+                                         nlayers_2d, nlayers_substrate,
+                                         separation)
+        n_sub = sub.num_sites
+        z_coords_sub = sub.frac_coords[:, 2]
+        z_upper_bound = np.unique(z_coords_sub)[-sd_layers]
+
+        return  hetero_interfaces[0], n_sub, z_upper_bound
