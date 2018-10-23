@@ -623,7 +623,7 @@ class Substrate_2D(object):
 
     def __init__(self, geometry_parameters):
         '''
-        Makes a substrate-2D (interface) object, and sets default parameter 
+        Makes a substrate-2D (interface) object, and sets default parameter
         values if necessary.
 
         Args:
@@ -719,50 +719,6 @@ class Substrate_2D(object):
 
     def unpad(self, cell, constraints):
         '''
-        Same method as in Sheet class. Here, we get the interface slab without
-        vacuum padding.
-
-        Args:
-            cell: the Cell to unpad
-
-            constraints: the Constraints of the search
-        '''
-
-        # make the unpadded lattice
-        cell.rotate_to_principal_directions()
-        species = cell.species
-        cartesian_coords = cell.cart_coords
-        layer_thickness = self.get_size(cell)
-        max_mid = constraints.get_max_mid() + 0.01  # just to be safe...
-        ax = cell.lattice.matrix[0][0]
-        bx = cell.lattice.matrix[1][0]
-        by = cell.lattice.matrix[1][1]
-        unpadded_lattice = Lattice([[ax, 0.0, 0.0], [bx, by, 0.0],
-                                    [0.0, 0.0, layer_thickness + max_mid]])
-
-        # modify the cell to correspond to the unpadded lattice
-        cell.modify_lattice(unpadded_lattice)
-        site_indices = []
-        for i in range(len(cell.sites)):
-            site_indices.append(i)
-        cell.remove_sites(site_indices)
-        for i in range(len(cartesian_coords)):
-            cell.append(species[i], cartesian_coords[i],
-                        coords_are_cartesian=True)
-
-        # translate the atoms back into the cell if needed, and shift them to
-        # the vertical center
-        cell.translate_atoms_into_cell()
-        frac_bounds = cell.get_bounding_box(cart_coords=False)
-        z_center = frac_bounds[2][0] + (frac_bounds[2][1] -
-                                        frac_bounds[2][0])/2
-        translation_vector = [0, 0, 0.5 - z_center]
-        site_indices = [i for i in range(len(cell.sites))]
-        cell.translate_sites(site_indices, translation_vector,
-                             frac_coords=True, to_unit_cell=False)
-
-    def remove_sub(self, cell, constraints):
-        '''
         Modifies the interface cell by removing the substrate atoms along with
         vacuum padding, leaving only the 2D/adsorbate layer. Per species max mid
         distance is added along c-vector and makes it normal to the Sheet.
@@ -803,7 +759,7 @@ class Substrate_2D(object):
         if break_ind!=100000:
             twod_ind = twod_ind[:break_ind]
         twod_ind.reverse()
-        
+
         # create lattice with 2D layer thickness
         twod_start_ind = twod_ind[0]
         all_z = [i[2] for i in cartesian_coords]
@@ -814,7 +770,7 @@ class Substrate_2D(object):
                                 [0.0, 0.0, twod_thickness + max_mid]])
         twod_cell = cell
         twod_cell.modify_lattice(twod_lattice)
-        
+
         # Add 2D atomic sites to the 2D lattice
         site_indices = []
         for i in range(len(twod_cell.sites)):
