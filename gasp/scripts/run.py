@@ -17,6 +17,7 @@ from gasp import general
 from gasp import population
 from gasp import objects_maker
 from gasp import parameters_printer
+from gasp import interface
 
 import copy
 import threading
@@ -60,6 +61,14 @@ def main():
     pool = objects_dict['pool']
     variations = objects_dict['variations']
     id_generator = objects_dict['id_generator']
+
+    # create E_sub_prim and n_sub_prim
+    E_sub_prim, n_sub_prim = None, None
+    if geometry.shape == 'interface':
+        match_constraints = objects_maker.get_lat_match_params(parameters)
+        E_sub_prim, n_sub_prim = objects_maker.get_prim_sub_data(parameters)
+        # Provide the POSCAR of primitve substrate as second argument
+        substrate_prim = Cell.from_file(os.path.abspath(sys.argv[2]))
 
     # make the run directory and move into it
     garun_dir = str(os.getcwd()) + '/' + run_dir_name
@@ -111,12 +120,22 @@ def main():
                             # whole_pop don't change upon relaxation
                             whole_pop.append(copy.deepcopy(new_organism))
                             geometry.pad(new_organism.cell)
+                            kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
+                            if geometry.shape == 'interface':
+                                new_organism.cell, new_organism.n_sub, \
+                                            new_organism.z_upper_bound = \
+                                            interface.run_lat_match(
+                                            substrate_prim, new_organism.cell,
+                                            match_constraints)
+                                kwargs['E_sub_prim'] = E_sub_prim
+                                kwargs['n_sub_prim'] = n_sub_prim
                             stopping_criteria.update_calc_counter()
                             index = len(threads)
                             thread = threading.Thread(
                                 target=energy_calculator.do_energy_calculation,
                                 args=[new_organism, relaxed_organisms,
-                                      index, composition_space])
+                                      index, composition_space],
+                                kwargs=kwargs)
                             thread.start()
                             threads.append(thread)
 
@@ -130,6 +149,8 @@ def main():
 
                         # take care of relaxed organism
                         if relaxed_organism is not None:
+                            # To keep it simple, remove_sub() in interface is
+                            # changed to unpad()
                             geometry.unpad(relaxed_organism.cell, constraints)
                             if developer.develop(relaxed_organism,
                                                  composition_space,
@@ -445,6 +466,20 @@ def main():
                             print('Number of energy calculations so far: '
                                   '{} '.format(num_finished_calcs))
 
+def get_prim_data():
+    '''
+    Submit the primitive substrate slab with n_layer_sub relaxed at the top
+    The total enthalpy, number of atoms are saved for future functionality
+    '''
+    # TODO: create a primitive substrate cell from relaxed bulk POSCAR
+    # Note: bulk relaxation is not included for convinience.
+    # Skip above step if primitve substrate POSCAR is already given
+    # TODO: get primitive substrate structure from the input files
+    # TODO: edit poscar file with sd flags
+    # TODO: submit the job and wait till its done
+    # TODO: get the data fromt the relaxed substrate
+    # Then execute main() function
+    pass
 
 if __name__ == "__main__":
     main()
