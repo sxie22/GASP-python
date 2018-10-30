@@ -94,9 +94,10 @@ class VaspEnergyCalculator(object):
         # sort the organism's cell and write to POSCAR file
         organism.cell.sort()
         if geometry.shape == 'interface':
+            cell = organism.cell
             n_sub = organism.n_sub
             z_upper_bound = organism.z_upper_bound
-            write_poscar(organism.cell, n_sub, z_upper_bound, job_dir_path)
+            write_poscar(cell, n_sub, z_upper_bound, job_dir_path)
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
 
@@ -158,6 +159,8 @@ class VaspEnergyCalculator(object):
                     pv = float(line.split()[-1])
         enthalpy = u + pv
 
+        # new relaxed_cell, total_energy, epa, ef_ads are attributed
+        # old n_sub, z_upper_bound and others are still carried
         organism.cell = relaxed_cell
         organism.total_energy = enthalpy
         organism.epa = enthalpy/organism.cell.num_sites

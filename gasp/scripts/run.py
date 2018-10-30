@@ -110,7 +110,9 @@ def main():
                     new_organism = creator.create_organism(
                         id_generator, composition_space, constraints, random)
                 if new_organism is not None:  # loop above could return None
-                    geometry.unpad(new_organism.cell, constraints)
+                    geometry.unpad(new_organism.cell, new_organism.n_sub,
+                                                                constraints)
+
                     if developer.develop(new_organism, composition_space,
                                          constraints, geometry, pool):
                         redundant_organism = redundancy_guard.check_redundancy(
@@ -151,7 +153,8 @@ def main():
                         if relaxed_organism is not None:
                             # To keep it simple, remove_sub() in interface is
                             # changed to unpad()
-                            geometry.unpad(relaxed_organism.cell, constraints)
+                            geometry.unpad(relaxed_organism.cell,
+                                            relaxed_organism.n_sub, constraints)
                             if developer.develop(relaxed_organism,
                                                  composition_space,
                                                  constraints, geometry, pool):
@@ -208,7 +211,8 @@ def main():
                                     id_generator, composition_space,
                                     constraints, random)
                             if new_organism is not None:
-                                geometry.unpad(new_organism.cell, constraints)
+                                geometry.unpad(new_organism.cell,
+                                                new_organism.n_sub, constraints)
                                 if developer.develop(new_organism,
                                                      composition_space,
                                                      constraints, geometry,
@@ -220,12 +224,23 @@ def main():
                                         whole_pop.append(
                                             copy.deepcopy(new_organism))
                                         geometry.pad(new_organism.cell)
+                                        kwargs = {'E_sub_prim': None,
+                                                            'n_sub_prim': None}
+                                        if geometry.shape == 'interface':
+                                            new_organism.cell, new_organism.n_sub, \
+                                                new_organism.z_upper_bound = \
+                                                interface.run_lat_match(
+                                                substrate_prim, new_organism.cell,
+                                                        match_constraints)
+                                            kwargs['E_sub_prim'] = E_sub_prim
+                                            kwargs['n_sub_prim'] = n_sub_prim
                                         stopping_criteria.update_calc_counter()
                                         new_thread = threading.Thread(
                                             target=energy_calculator.do_energy_calculation,
                                             args=[new_organism,
                                                   relaxed_organisms, index,
-                                                  composition_space])
+                                                  composition_space],
+                                            kwargs=kwargs)
                                         new_thread.start()
                                         threads[index] = new_thread
                                         started_new_calc = True
@@ -249,7 +264,8 @@ def main():
 
                 # take care of relaxed organism
                 if relaxed_organism is not None:
-                    geometry.unpad(relaxed_organism.cell, constraints)
+                    geometry.unpad(relaxed_organism.cell,
+                                        relaxed_organism.n_sub, constraints)
                     if developer.develop(relaxed_organism, composition_space,
                                          constraints, geometry, pool):
                         redundant_organism = redundancy_guard.check_redundancy(
@@ -306,12 +322,21 @@ def main():
             developer, redundancy_guard, composition_space, constraints)
         whole_pop.append(copy.deepcopy(unrelaxed_offspring))
         geometry.pad(unrelaxed_offspring.cell)
+        kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
+        if geometry.shape == 'interface':
+            unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
+                                unrelaxed_offspring.z_upper_bound = \
+                                        interface.run_lat_match(
+                                        substrate_prim, unrelaxed_offspring.cell,
+                                        match_constraints)
+            kwargs['E_sub_prim'] = E_sub_prim
+            kwargs['n_sub_prim'] = n_sub_prim
         stopping_criteria.update_calc_counter()
         index = len(threads)
         new_thread = threading.Thread(
             target=energy_calculator.do_energy_calculation,
             args=[unrelaxed_offspring, relaxed_organisms, index,
-                  composition_space])
+                  composition_space], kwargs=kwargs)
         new_thread.start()
         threads.append(new_thread)
 
@@ -325,7 +350,8 @@ def main():
 
                 # take care of relaxed offspring organism
                 if relaxed_offspring is not None:
-                    geometry.unpad(relaxed_offspring.cell, constraints)
+                    geometry.unpad(relaxed_offspring.cell,
+                                        relaxed_offspring.n_sub, constraints)
                     if developer.develop(relaxed_offspring, composition_space,
                                          constraints, geometry, pool):
                         # check for redundancy with the the pool first
@@ -400,11 +426,21 @@ def main():
                             composition_space, constraints)
                     whole_pop.append(copy.deepcopy(unrelaxed_offspring))
                     geometry.pad(unrelaxed_offspring.cell)
+                    kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
+                    if geometry.shape == 'interface':
+                        unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
+                                            unrelaxed_offspring.z_upper_bound = \
+                                            interface.run_lat_match(
+                                                    substrate_prim,
+                                                    unrelaxed_offspring.cell,
+                                                    match_constraints)
+                        kwargs['E_sub_prim'] = E_sub_prim
+                        kwargs['n_sub_prim'] = n_sub_prim
                     stopping_criteria.update_calc_counter()
                     new_thread = threading.Thread(
                         target=energy_calculator.do_energy_calculation,
                         args=[unrelaxed_offspring, relaxed_organisms,
-                              index, composition_space])
+                              index, composition_space], kwargs=kwargs)
                     new_thread.start()
                     threads[index] = new_thread
 
@@ -423,7 +459,8 @@ def main():
 
                 # take care of relaxed offspring organism
                 if relaxed_offspring is not None:
-                    geometry.unpad(relaxed_offspring.cell, constraints)
+                    geometry.unpad(relaxed_offspring.cell,
+                                        relaxed_offspring.n_sub, constraints)
                     if developer.develop(relaxed_offspring, composition_space,
                                          constraints, geometry, pool):
                         # check for redundancy with the pool first
@@ -466,20 +503,6 @@ def main():
                             print('Number of energy calculations so far: '
                                   '{} '.format(num_finished_calcs))
 
-def get_prim_data():
-    '''
-    Submit the primitive substrate slab with n_layer_sub relaxed at the top
-    The total enthalpy, number of atoms are saved for future functionality
-    '''
-    # TODO: create a primitive substrate cell from relaxed bulk POSCAR
-    # Note: bulk relaxation is not included for convinience.
-    # Skip above step if primitve substrate POSCAR is already given
-    # TODO: get primitive substrate structure from the input files
-    # TODO: edit poscar file with sd flags
-    # TODO: submit the job and wait till its done
-    # TODO: get the data fromt the relaxed substrate
-    # Then execute main() function
-    pass
 
 if __name__ == "__main__":
     main()

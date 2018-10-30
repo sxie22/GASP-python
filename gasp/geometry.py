@@ -56,7 +56,7 @@ class Bulk(object):
 
         pass
 
-    def unpad(self, cell, constraints):
+    def unpad(self, cell, n_sub, constraints):
         '''
         Does nothing.
 
@@ -178,7 +178,7 @@ class Sheet(object):
         cell.translate_sites(site_indices, translation_vector,
                              frac_coords=True, to_unit_cell=False)
 
-    def unpad(self, cell, constraints):
+    def unpad(self, cell, n_sub, constraints):
         '''
         Modifies a cell by removing vertical vacuum padding, leaving only
         enough to satisfy the per-species MID constraints, and makes the
@@ -346,7 +346,7 @@ class Wire(object):
         cell.translate_sites(site_indices, translation_vector,
                              frac_coords=True, to_unit_cell=False)
 
-    def unpad(self, cell, constraints):
+    def unpad(self, cell, n_sub, constraints):
         '''
         Modifies a cell by removing horizontal vacuum padding around a wire,
         leaving only enough to satisfy the per-species MID constraints, and
@@ -536,7 +536,7 @@ class Cluster(object):
         cell.translate_sites(site_indices, translation_vector,
                              frac_coords=True, to_unit_cell=False)
 
-    def unpad(self, cell, constraints):
+    def unpad(self, cell, n_sub, constraints):
         '''
         Modifies a cell by removing vacuum padding in every direction, leaving
         only enough to satisfy the per-species MID constraints, and makes the
@@ -717,7 +717,7 @@ class Substrate_2D(object):
         cell.translate_sites(site_indices, translation_vector,
                              frac_coords=True, to_unit_cell=False)
 
-    def unpad(self, cell, constraints):
+    def unpad(self, cell, n_sub, constraints):
         '''
         Modifies the interface cell by removing the substrate atoms along with
         vacuum padding, leaving only the 2D/adsorbate layer. Per species max mid
@@ -739,33 +739,19 @@ class Substrate_2D(object):
         bx = cell.lattice.matrix[1][0]
         by = cell.lattice.matrix[1][1]
 
-        # get the thickess of substrate and 2D lattices
-        all_species = [str(i) for i in cell.species]
-        elements_2D = parameters['Species']['twod_species']
-        twod_ind = []
-        for i, atom in enumerate(all_species):
-            if atom in elements_2D:
-                twod_ind.append(i)
-        # At this point, care should be taken to not have structures with
-        # continuing species in substrate and 2D material
-
-        # Removes all the indices (if any) other than the sequence at the end
-        twod_ind.reverse()
-        break_ind = 100000
-        for i in range(len(twod_ind)-1):
-            if twod_ind[i+1]!=twod_ind[i]-1:
-                break_ind = i+1
-                break
-        if break_ind!=100000:
-            twod_ind = twod_ind[:break_ind]
-        twod_ind.reverse()
-
         # create lattice with 2D layer thickness
-        twod_start_ind = twod_ind[0]
         all_z = [i[2] for i in cartesian_coords]
         all_z.sort()
-        # sub_thickness  = all_z[twod_start_ind-1]-all_z[0]
-        twod_thickness = all_z[-1] - all_z[twod_start_ind]
+
+        # Check if n_sub exists, else make ind_sub=0
+        # This takes the entire cell thickness if ind_sub=0.
+        if n_sub is None:
+            ind_sub = 0
+        else:
+            ind_sub = n_sub
+
+        # all_z[n_sub] belongs to the first twod site
+        twod_thickness = all_z[-1] - all_z[ind_sub]
         twod_lattice = Lattice([[ax, 0.0, 0.0], [bx, by, 0.0],
                                 [0.0, 0.0, twod_thickness + max_mid]])
         twod_cell = cell

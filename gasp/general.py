@@ -115,6 +115,13 @@ class Organism(object):
         # the name of the algorithm that created this organism
         self.made_by = maker
 
+        # Substrate related defaults
+        # Number of atoms of the substrate in the interface
+        self.n_sub = None
+        self.ef_ads = None
+        self.z_upper_bound=None
+
+
     # This keeps the id (sort of) immutable by causing an exception to be
     # raised if the id is attempted to be set with org.id = some_id.
     @property
@@ -426,6 +433,13 @@ class Cell(Structure):
             if coord[2] > maxz:
                 maxz = coord[2]
         return [[minx, maxx], [miny, maxy], [minz, maxz]]
+
+    def surface_area(cell):
+        """
+        Calculates the surface area of the Cell
+        """
+        m = cell.lattice.matrix
+        return np.linalg.norm(np.cross(m[0], m[1]))
 
 
 class OffspringGenerator(object):
