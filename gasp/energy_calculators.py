@@ -21,7 +21,6 @@ do_energy_calculation() method.
 """
 
 from gasp.general import Cell
-from gasp.objects_maker import get_prim_sub_data
 
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.periodic_table import Element

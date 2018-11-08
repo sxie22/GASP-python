@@ -68,7 +68,7 @@ def main():
         match_constraints = objects_maker.get_lat_match_params(parameters)
         E_sub_prim, n_sub_prim = objects_maker.get_prim_sub_data(parameters)
         # Provide the POSCAR of primitve substrate as second argument
-        substrate_prim = Cell.from_file(os.path.abspath(sys.argv[2]))
+        substrate_prim = general.Cell.from_file(os.path.abspath(sys.argv[2]))
 
     # make the run directory and move into it
     garun_dir = str(os.getcwd()) + '/' + run_dir_name
@@ -126,8 +126,8 @@ def main():
                             if geometry.shape == 'interface':
                                 new_organism.cell, new_organism.n_sub, \
                                             new_organism.z_upper_bound = \
-                                            interface.run_lat_match(
-                                            substrate_prim, new_organism.cell,
+                                            interface.run_lat_match( \
+                                            substrate_prim, new_organism.cell, \
                                             match_constraints)
                                 kwargs['E_sub_prim'] = E_sub_prim
                                 kwargs['n_sub_prim'] = n_sub_prim

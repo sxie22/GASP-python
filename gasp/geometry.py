@@ -733,6 +733,7 @@ class Substrate_2D(object):
 
         # make the lattice of 2D structure
         cell.rotate_to_principal_directions()
+        species = cell.species
         cartesian_coords = cell.cart_coords
         max_mid = constraints.get_max_mid() + 0.01  # just to be safe...
         ax = cell.lattice.matrix[0][0]
@@ -757,13 +758,17 @@ class Substrate_2D(object):
         twod_cell = cell
         twod_cell.modify_lattice(twod_lattice)
 
+        # index of all the twod sites in the interface cell
+        all_ind = range(len(cartesian_coords))
+        twod_ind = all_ind[-ind_sub:]
+
         # Add 2D atomic sites to the 2D lattice
         site_indices = []
         for i in range(len(twod_cell.sites)):
             site_indices.append(i)
-            twod_cell.remove_sites(site_indices)
-            for i in twod_ind:
-                twod_cell.append(species[i], cartesian_coords[i],
+        twod_cell.remove_sites(site_indices)
+        for i in twod_ind:
+            twod_cell.append(species[i], cartesian_coords[i],
                                 coords_are_cartesian=True)
 
         # translate the atoms back into the cell if needed, and shift them to
