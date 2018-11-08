@@ -22,10 +22,14 @@ do_energy_calculation() method.
 
 from gasp.general import Cell
 
+
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.periodic_table import Element
+from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.lammps.data import LammpsData
 import pymatgen.command_line.gulp_caller as gulp_caller
+
+import numpy as np
 
 import shutil
 import subprocess
@@ -92,11 +96,11 @@ class VaspEnergyCalculator(object):
 
         # sort the organism's cell and write to POSCAR file
         organism.cell.sort()
-        if geometry.shape == 'interface':
+        if E_sub_prim is not None and n_sub_prim is not None:
             cell = organism.cell
             n_sub = organism.n_sub
             z_upper_bound = organism.z_upper_bound
-            write_poscar(cell, n_sub, z_upper_bound, job_dir_path)
+            self.write_poscar(cell, n_sub, z_upper_bound, job_dir_path)
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
 
@@ -176,14 +180,14 @@ class VaspEnergyCalculator(object):
         dictionary[key] = organism
 
 
-    def write_poscar(iface, n_sub, z_upper_bound, job_dir_path):
+    def write_poscar(self, iface, n_sub, z_upper_bound, job_dir_path):
         '''
         Returns POSCAR of the interface with sd flags and comment line
 
         '''
         n_iface = iface.num_sites
         n_twod = n_iface - n_sub
-        comment = 'N_sub %d    N_twod %d' % (N_sub, N_twod)
+        comment = 'N_sub %d    N_twod %d' % (n_sub, n_twod)
 
         sd_flags = np.zeros_like(iface.frac_coords)
         z_coords_iface = iface.frac_coords[:, 2]
