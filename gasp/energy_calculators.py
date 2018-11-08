@@ -63,8 +63,8 @@ class VaspEnergyCalculator(object):
         self.kpoints_file = kpoints_file
         self.potcar_files = potcar_files
 
-    def do_energy_calculation(self, organism, dictionary, key,
-                        composition_space, E_sub_prim=None, n_sub_prim=None):
+    def do_energy_calculation(self, organism, dictionary, key, composition_space,
+                             n_max_poscar=50, E_sub_prim=None, n_sub_prim=None):
         """
         Calculates the energy of an organism using VASP, and stores the relaxed
         organism in the provided dictionary at the provided key. If the
@@ -119,6 +119,17 @@ class VaspEnergyCalculator(object):
                     for line in potcar_file:
                         total_potcar_file.write(line)
 
+        # Check the number of atoms in poscar (n_max_poscar) for interfaces only
+        # Run this job later if interested
+        if E_sub_prim is not None and n_sub_prim is not None:
+            poscar_path = job_dir_path + '/POSCAR'
+            iface_str = Cell.from_file(poscar_path)
+            n_atoms = len(iface_str.sites)
+            if n_atoms > n_max_poscar:
+                print('The structure has %d atoms. Not submitting for \
+                       energy calculation' % n_atoms)
+                return 
+            
         # run 'callvasp' script as a subprocess to run VASP
         print('Starting VASP calculation on organism {} '.format(organism.id))
         devnull = open(os.devnull, 'w')
