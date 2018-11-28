@@ -22,7 +22,6 @@ do_energy_calculation() method.
 
 from gasp.general import Cell
 
-
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.periodic_table import Element
 from pymatgen.io.vasp.inputs import Poscar
@@ -64,7 +63,7 @@ class VaspEnergyCalculator(object):
         self.potcar_files = potcar_files
 
     def do_energy_calculation(self, organism, dictionary, key, composition_space,
-                             n_max_poscar=50, E_sub_prim=None, n_sub_prim=None):
+                       n_max_poscar=50, E_sub_prim=None, n_sub_prim=None):
         """
         Calculates the energy of an organism using VASP, and stores the relaxed
         organism in the provided dictionary at the provided key. If the
@@ -104,6 +103,16 @@ class VaspEnergyCalculator(object):
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
 
+        # Check the number of atoms in poscar (n_max_poscar) for interfaces only
+        if E_sub_prim is not None and n_sub_prim is not None:
+            poscar_path = job_dir_path + '/POSCAR'
+            iface_str = Cell.from_file(poscar_path)
+            n_atoms = len(iface_str.sites)
+            if n_atoms > n_max_poscar:
+                print('The structure has %d atoms. Not submitting for '
+                      'energy calculation' % n_atoms)
+                return
+
         # get a list of the element symbols in the sorted order
         symbols = []
         for site in organism.cell.sites:
@@ -119,17 +128,6 @@ class VaspEnergyCalculator(object):
                     for line in potcar_file:
                         total_potcar_file.write(line)
 
-        # Check the number of atoms in poscar (n_max_poscar) for interfaces only
-        # Run this job later if interested
-        if E_sub_prim is not None and n_sub_prim is not None:
-            poscar_path = job_dir_path + '/POSCAR'
-            iface_str = Cell.from_file(poscar_path)
-            n_atoms = len(iface_str.sites)
-            if n_atoms > n_max_poscar:
-                print('The structure has %d atoms. Not submitting for \
-                       energy calculation' % n_atoms)
-                return 
-            
         # run 'callvasp' script as a subprocess to run VASP
         print('Starting VASP calculation on organism {} '.format(organism.id))
         devnull = open(os.devnull, 'w')
@@ -178,6 +176,10 @@ class VaspEnergyCalculator(object):
         organism.cell = relaxed_cell
         organism.total_energy = enthalpy
         organism.epa = enthalpy/organism.cell.num_sites
+        print('Setting energy of organism {} to {} '
+              'eV/atom '.format(organism.id, organism.epa))
+
+        # If substrate search, obtain obj fn ef_ads
         if E_sub_prim is not None and n_sub_prim is not None:
             n_iface = relaxed_cell.num_sites
             n_sub = organism.n_sub
@@ -185,9 +187,9 @@ class VaspEnergyCalculator(object):
             factor = n_sub/n_sub_prim
             ef_ads = enthalpy/n_twod - factor*E_sub_prim/n_twod
             organism.ef_ads = ef_ads
+            print ('Setting Ef_adsorption of organism {} to {} eV/atom '.format(
+                    organism.id, organism.ef_ads))
 
-        print('Setting energy of organism {} to {} '
-              'eV/atom '.format(organism.id, organism.epa))
         dictionary[key] = organism
 
 
@@ -233,7 +235,7 @@ class LammpsEnergyCalculator(object):
         self.input_script = input_script
 
     def do_energy_calculation(self, organism, dictionary, key,
-                              composition_space):
+                        composition_space, E_sub_prim=None, n_sub_prim=None):
         """
         Calculates the energy of an organism using LAMMPS, and stores the
         relaxed organism in the provided dictionary at the provided key. If the
@@ -262,11 +264,18 @@ class LammpsEnergyCalculator(object):
         script_name = os.path.basename(self.input_script)
         input_script_path = job_dir_path + '/' + str(script_name)
 
+        # For substrate calculations, the cell is already matched
+
         # write the in.data file
         self.conform_to_lammps(organism.cell)
         self.write_data_file(organism, job_dir_path, composition_space)
 
         # write out the unrelaxed structure to a poscar file
+        if E_sub_prim is not None and n_sub_prim is not None:
+            cell = organism.cell
+            n_sub = organism.n_sub
+            z_upper_bound = organism.z_upper_bound
+            self.write_poscar(cell, n_sub, z_upper_bound, job_dir_path)
         organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR.' +
                          str(organism.id) + '_unrelaxed')
 
@@ -328,6 +337,18 @@ class LammpsEnergyCalculator(object):
         organism.epa = epa
         print('Setting energy of organism {} to {} eV/atom '.format(
             organism.id, organism.epa))
+
+        # If substrate search, obtain obj fn ef_ads
+        if E_sub_prim is not None and n_sub_prim is not None:
+            n_iface = relaxed_cell.num_sites
+            n_sub = organism.n_sub
+            n_twod = n_iface - n_sub
+            factor = n_sub/n_sub_prim
+            ef_ads = enthalpy/n_twod - factor*E_sub_prim/n_twod
+            organism.ef_ads = ef_ads
+            print ('Setting Ef_adsorption of organism {} to {} eV/atom '.format(
+                    organism.id, organism.ef_ads))
+                    
         dictionary[key] = organism
 
     def conform_to_lammps(self, cell):
@@ -559,6 +580,24 @@ class LammpsEnergyCalculator(object):
             if all(match in lines[i] for match in match_strings):
                 energy = float(lines[i + 2].split()[4])
         return energy
+
+    def write_poscar(self, iface, n_sub, z_upper_bound, job_dir_path):
+        '''
+        Returns POSCAR of the interface with sd flags and comment line
+
+        '''
+        n_iface = iface.num_sites
+        n_twod = n_iface - n_sub
+        comment = 'N_sub %d    N_twod %d' % (n_sub, n_twod)
+
+        sd_flags = np.zeros_like(iface.frac_coords)
+        z_coords_iface = iface.frac_coords[:, 2]
+        sd_flags[np.where(z_coords_iface >= z_upper_bound)] = np.ones((1, 3))
+        new_sd = []
+        for i in sd_flags:
+            new_sd.append([bool(x) for x in i])
+        poscar = Poscar(iface, comment, selective_dynamics=new_sd)
+        poscar.write_file(filename=job_dir_path + '/POSCAR')
 
 
 class GulpEnergyCalculator(object):
