@@ -64,7 +64,11 @@ def main():
 
     # create E_sub_prim and n_sub_prim
     E_sub_prim, n_sub_prim = None, None
+    substrate_search = False
     if geometry.shape == 'interface':
+        substrate_search = True
+
+    if substrate_search:
         match_constraints = objects_maker.get_lat_match_params(parameters)
         E_sub_prim, n_sub_prim = objects_maker.get_prim_sub_data(parameters)
         # Provide the POSCAR of primitve substrate as second argument
@@ -123,7 +127,7 @@ def main():
                             whole_pop.append(copy.deepcopy(new_organism))
                             geometry.pad(new_organism.cell)
                             kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
-                            if geometry.shape == 'interface':
+                            if substrate_search:
                                 new_organism.cell, new_organism.n_sub, \
                                             new_organism.z_upper_bound = \
                                             interface.run_lat_match( \
@@ -162,13 +166,22 @@ def main():
                                     redundancy_guard.check_redundancy(
                                         relaxed_organism, whole_pop, geometry)
                                 if redundant_organism is not None:  # redundant
-                                    if redundant_organism.is_active and \
-                                            redundant_organism.epa > \
-                                            relaxed_organism.epa:
+                                    replace_org = False
+                                    if substrate_search:
+                                        if redundant_organism.is_active and \
+                                                redundant_organism.ef_ads > \
+                                                relaxed_organism.ef_ads:
+                                            replace_org = True
+                                    else:
+                                        if redundant_organism.is_active and \
+                                                redundant_organism.epa > \
+                                                relaxed_organism.epa:
+                                            replace_org = True
+                                    if replace_org:
                                         initial_population.replace_organism(
-                                            redundant_organism,
-                                            relaxed_organism,
-                                            composition_space)
+                                                redundant_organism,
+                                                relaxed_organism,
+                                                composition_space)
                                         progress = \
                                             initial_population.get_progress(
                                                 composition_space)
@@ -226,7 +239,7 @@ def main():
                                         geometry.pad(new_organism.cell)
                                         kwargs = {'E_sub_prim': None,
                                                             'n_sub_prim': None}
-                                        if geometry.shape == 'interface':
+                                        if substrate_search:
                                             new_organism.cell, new_organism.n_sub, \
                                                 new_organism.z_upper_bound = \
                                                 interface.run_lat_match(
@@ -271,9 +284,18 @@ def main():
                         redundant_organism = redundancy_guard.check_redundancy(
                             relaxed_organism, whole_pop, geometry)
                         if redundant_organism is not None:  # redundant
-                            if redundant_organism.is_active and \
-                                    redundant_organism.epa > \
-                                    relaxed_organism.epa:
+                            replace_org = False
+                            if substrate_search:
+                                if redundant_organism.is_active and \
+                                        redundant_organism.ef_ads > \
+                                        relaxed_organism.ef_ads:
+                                    replace_org = True
+                            else:
+                                if redundant_organism.is_active and \
+                                        redundant_organism.epa > \
+                                        relaxed_organism.epa:
+                                    replace_org = True
+                            if replace_org:
                                 initial_population.replace_organism(
                                     redundant_organism, relaxed_organism,
                                     composition_space)
@@ -323,7 +345,7 @@ def main():
         whole_pop.append(copy.deepcopy(unrelaxed_offspring))
         geometry.pad(unrelaxed_offspring.cell)
         kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
-        if geometry.shape == 'interface':
+        if substrate_search:
             unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
                                 unrelaxed_offspring.z_upper_bound = \
                                         interface.run_lat_match(
@@ -358,7 +380,16 @@ def main():
                         redundant_organism = redundancy_guard.check_redundancy(
                             relaxed_offspring, pool.to_list(), geometry)
                         if redundant_organism is not None:  # redundant
-                            if redundant_organism.epa > relaxed_offspring.epa:
+                            replace_org = False
+                            if substrate_search:
+                                if redundant_organism.ef_ads > \
+                                        relaxed_organism.ef_ads:
+                                    replace_org = True
+                            else:
+                                if redundant_organism.epa > \
+                                        relaxed_organism.epa:
+                                    replace_org = True
+                            if replace_org:
                                 pool.replace_organism(redundant_organism,
                                                       relaxed_offspring,
                                                       composition_space)
@@ -427,7 +458,7 @@ def main():
                     whole_pop.append(copy.deepcopy(unrelaxed_offspring))
                     geometry.pad(unrelaxed_offspring.cell)
                     kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
-                    if geometry.shape == 'interface':
+                    if substrate_search:
                         unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
                                             unrelaxed_offspring.z_upper_bound = \
                                             interface.run_lat_match(
@@ -467,7 +498,16 @@ def main():
                         redundant_organism = redundancy_guard.check_redundancy(
                             relaxed_offspring, pool.to_list(), geometry)
                         if redundant_organism is not None:  # redundant
-                            if redundant_organism.epa > relaxed_offspring.epa:
+                            replace_org = False
+                            if substrate_search:
+                                if redundant_organism.ef_ads > \
+                                        relaxed_organism.ef_ads:
+                                    replace_org = True
+                            else:
+                                if redundant_organism.epa > \
+                                        relaxed_organism.epa:
+                                    replace_org = True
+                            if replace_org:
                                 pool.replace_organism(redundant_organism,
                                                       relaxed_offspring,
                                                       composition_space)
