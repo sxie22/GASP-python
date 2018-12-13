@@ -297,7 +297,7 @@ def get_matching_lattices(iface1, iface2, max_area=100,
                 f.write(matches_dict)
 
         #print('\nSmallest area matched uv\n')
-        #return uv_opt[0], uv_opt[1]
+        return uv_opt[0], uv_opt[1]
     else:
         print('\n NO MATCH FOUND\n')
         return None, None
@@ -506,7 +506,7 @@ def run_lat_match(substrate, twod_layer, match_constraints):
                             max_area=max_area,
                             max_mismatch=max_mismatch,
                             max_angle_diff=max_angle_diff,
-                            r1r2_tol=r1r2_tol)
+			    r1r2_tol=r1r2_tol)
     #If opt is set to true, returns only optimum structures uv.
     #merge substrate and mat2d in all possible ways
     hetero_interfaces = generate_all_configs(sub, mat2d,
