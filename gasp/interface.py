@@ -123,7 +123,7 @@ def get_r_list(area1, area2, max_area, tol=0.02):
     r_list = []
     rmax1 = int(max_area / area1)
     rmax2 = int(max_area / area2)
-    print('rmax1, rmax2: {0}, {1}\n'.format(rmax1, rmax2))
+    #print('rmax1, rmax2: {0}, {1}\n'.format(rmax1, rmax2))
     for r1 in range(1, rmax1 + 1):
         for r2 in range(1, rmax2 + 1):
             if abs(float(r1) * area1 - float(r2) * area2) / max_area <= tol:
@@ -225,14 +225,14 @@ def get_matching_lattices(iface1, iface2, max_area=100,
         # ab2 is that of 2d material
         ab1 = [iface1.lattice.matrix[0, :], iface1.lattice.matrix[1, :]]
         ab2 = [iface2.lattice.matrix[0, :], iface2.lattice.matrix[1, :]]
-    print('initial values:\nuv1:\n{0}\nuv2:\n{1}\n '.format(ab1, ab2))
+    #print('initial values:\nuv1:\n{0}\nuv2:\n{1}\n '.format(ab1, ab2))
     r_list = get_r_list(area1, area2, max_area, tol=r1r2_tol)
     if not r_list:
         print('r_list is empty. Try increasing the max surface \
                 area or/and the other tolerance paramaters')
         sys.exit()
     found = []
-    print('searching ...')
+    #print('searching ...')
     uv1_list, tm1_list, uv2_list, tm2_list = [], [], [], []
     for r1r2 in r_list:
         x1, y1 = reduced_supercell_vectors(ab1, r1r2[0])
@@ -258,18 +258,17 @@ def get_matching_lattices(iface1, iface2, max_area=100,
                 if abs(u_mismatch) < max_mismatch and abs(
                         v_mismatch) < max_mismatch:
                     if angle_mismatch < max_angle_diff:
-                        found.append((uv1, uv2, min(area1, area2), u_mismatch,
+                        found.append((uv1, uv2, max(area1, area2), u_mismatch,
                                       v_mismatch, angle_mismatch))
 
     if found:
         print('\nMATCH FOUND\n')
         uv_all = sorted(found, key=lambda x: x[2])  # sort all based on area
         uv_opt = uv_all[0]				# min. area match
-        print('optimum values:\nuv1:\n{0}\nuv2:\n{1}\narea:\n{2}\n'.format(
+        print('Best match:\nuv1:\n{0}\nuv2:\n{1}\narea:\n{2}\n'.format(
             uv_opt[0], uv_opt[1], uv_opt[2]))
-        print('Corresponding u,v & angle mismatches:\n{0}, {1}, {2}\n'.format(uv_opt[3],
-                                                                              uv_opt[4],
-                                                                              uv_opt[5]))
+        print('Lattice mismatch[u, v & alpha]:\n{0} \%, {1} \%, \
+		{2} degrees\n'.format(uv_opt[3]*100, uv_opt[4]*100, uv_opt[5]))
 
         # uv_all is written to a dictionary
         matches_dict = {}
@@ -297,8 +296,8 @@ def get_matching_lattices(iface1, iface2, max_area=100,
                                                 ))
                 f.write(matches_dict)
 
-        print('\nSmallest area matched uv\n')
-        return uv_opt[0], uv_opt[1]
+        #print('\nSmallest area matched uv\n')
+        #return uv_opt[0], uv_opt[1]
     else:
         print('\n NO MATCH FOUND\n')
         return None, None
