@@ -230,7 +230,8 @@ def get_matching_lattices(iface1, iface2, max_area=100,
     if not r_list:
         print('r_list is empty. Try increasing the max surface \
                 area or/and the other tolerance paramaters')
-        sys.exit()
+        return None, None
+        #sys.exit()
     found = []
     #print('searching ...')
     uv1_list, tm1_list, uv2_list, tm2_list = [], [], [], []
@@ -361,8 +362,9 @@ def generate_all_configs(substrate, mat2d,
     """
     # immediate exit if no structures
     if not (mat2d and substrate):
-        print("no structures. aborting ...")
-        sys.exit()
+        print("no structures. aborting lattice match ...")
+        return None
+        #sys.exit()
     # unique site coordinates in the substrate top layers
     coords_uniq_sub = get_uniq_layercoords(substrate,
                                            nlayers_substrate,
@@ -417,7 +419,8 @@ def get_aligned_lattices(slab_sub, slab_2d, max_area=200,
                                                    r1r2_tol=r1r2_tol)
     if not uv_substrate and not uv_mat2d:
         print("no matching u and v, trying adjusting the parameters")
-        sys.exit()
+        return None, None
+        #sys.exit()
 
     substrate = Structure.from_sites(slab_sub)
     mat2d = Structure.from_sites(slab_2d)
@@ -506,14 +509,19 @@ def run_lat_match(substrate, twod_layer, match_constraints):
                             max_area=max_area,
                             max_mismatch=max_mismatch,
                             max_angle_diff=max_angle_diff,
-			    r1r2_tol=r1r2_tol)
+			                r1r2_tol=r1r2_tol)
+
     #If opt is set to true, returns only optimum structures uv.
     #merge substrate and mat2d in all possible ways
-    hetero_interfaces = generate_all_configs(sub, mat2d,
+    hetero_interfaces = None
+    if sub and mat2d:
+        hetero_interfaces = generate_all_configs(sub, mat2d,
                                      nlayers_2d, nlayers_substrate,
                                      separation)
-    n_sub = sub.num_sites
-    z_coords_sub = sub.frac_coords[:, 2]
-    z_upper_bound = np.unique(z_coords_sub)[-sd_layers]
-
-    return  hetero_interfaces[0], n_sub, z_upper_bound
+        n_sub = sub.num_sites
+        z_coords_sub = sub.frac_coords[:, 2]
+        z_upper_bound = np.unique(z_coords_sub)[-sd_layers]
+    if hetero_interfaces:
+        return  hetero_interfaces[0], n_sub, z_upper_bound
+    else:
+        return None, None, None

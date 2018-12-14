@@ -135,9 +135,6 @@ def main():
                         redundant_organism = redundancy_guard.check_redundancy(
                             new_organism, whole_pop, geometry)
                         if redundant_organism is None:  # no redundancy
-                            # add a copy to whole_pop so the organisms in
-                            # whole_pop don't change upon relaxation
-                            whole_pop.append(copy.deepcopy(new_organism))
                             geometry.pad(new_organism.cell)
                             kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
                             if substrate_search:
@@ -148,6 +145,11 @@ def main():
                                             match_constraints)
                                 kwargs['E_sub_prim'] = E_sub_prim
                                 kwargs['n_sub_prim'] = n_sub_prim
+                                if new_organism.cell is None:
+                                    continue
+                            # add a copy to whole_pop so the organisms in
+                            # whole_pop don't change upon relaxation
+                            whole_pop.append(copy.deepcopy(new_organism))
                             stopping_criteria.update_calc_counter()
                             index = len(threads)
                             thread = threading.Thread(
@@ -247,8 +249,6 @@ def main():
                                         redundancy_guard.check_redundancy(
                                             new_organism, whole_pop, geometry)
                                     if redundant_organism is None:  # not redundant
-                                        whole_pop.append(
-                                            copy.deepcopy(new_organism))
                                         geometry.pad(new_organism.cell)
                                         kwargs = {'E_sub_prim': None,
                                                             'n_sub_prim': None}
@@ -260,6 +260,10 @@ def main():
                                                         match_constraints)
                                             kwargs['E_sub_prim'] = E_sub_prim
                                             kwargs['n_sub_prim'] = n_sub_prim
+                                            if new_organism.cell is None:
+                                                continue
+                                        whole_pop.append(
+                                            copy.deepcopy(new_organism))
                                         stopping_criteria.update_calc_counter()
                                         new_thread = threading.Thread(
                                             target=energy_calculator.do_energy_calculation,
@@ -355,7 +359,6 @@ def main():
         unrelaxed_offspring = offspring_generator.make_offspring_organism(
             random, pool, variations, geometry, id_generator, whole_pop,
             developer, redundancy_guard, composition_space, constraints)
-        whole_pop.append(copy.deepcopy(unrelaxed_offspring))
         geometry.pad(unrelaxed_offspring.cell)
         kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
         if substrate_search:
@@ -366,6 +369,9 @@ def main():
                                         match_constraints)
             kwargs['E_sub_prim'] = E_sub_prim
             kwargs['n_sub_prim'] = n_sub_prim
+            if unrelaxed_offspring.cell is None:
+                continue
+        whole_pop.append(copy.deepcopy(unrelaxed_offspring))
         stopping_criteria.update_calc_counter()
         index = len(threads)
         new_thread = threading.Thread(
@@ -468,7 +474,6 @@ def main():
                             random, pool, variations, geometry, id_generator,
                             whole_pop, developer, redundancy_guard,
                             composition_space, constraints)
-                    whole_pop.append(copy.deepcopy(unrelaxed_offspring))
                     geometry.pad(unrelaxed_offspring.cell)
                     kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
                     if substrate_search:
@@ -480,6 +485,9 @@ def main():
                                                     match_constraints)
                         kwargs['E_sub_prim'] = E_sub_prim
                         kwargs['n_sub_prim'] = n_sub_prim
+                        if unrelaxed_offspring.cell is None:
+                            continue
+                    whole_pop.append(copy.deepcopy(unrelaxed_offspring))
                     stopping_criteria.update_calc_counter()
                     new_thread = threading.Thread(
                         target=energy_calculator.do_energy_calculation,
