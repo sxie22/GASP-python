@@ -186,10 +186,11 @@ class VaspEnergyCalculator(object):
             n_sub = organism.n_sub
             n_twod = n_iface - n_sub
             factor = n_sub/n_sub_prim
-            ef_ads = enthalpy/n_twod - factor*E_sub_prim/n_twod
-            organism.ef_ads = ef_ads
+            ef_ads = enthalpy/n_twod - factor * E_sub_prim / n_twod
+            organism.total_energy = enthalpy - factor * E_sub_prim
+            organism.epa = ef_ads
             print ('Setting Ef_adsorption of organism {} to {} eV/atom '.format(
-                    organism.id, organism.ef_ads))
+                    organism.id, organism.epa))
 
         dictionary[key] = organism
 
@@ -345,11 +346,12 @@ class LammpsEnergyCalculator(object):
             n_sub = organism.n_sub
             n_twod = n_iface - n_sub
             factor = n_sub/n_sub_prim
-            ef_ads = enthalpy/n_twod - factor*E_sub_prim/n_twod
-            organism.ef_ads = ef_ads
+            ef_ads = enthalpy / n_twod - factor * E_sub_prim / n_twod
+            organism.total_energy = enthalpy = factor * E_sub_prim
+            organism.epa = ef_ads
             print ('Setting Ef_adsorption of organism {} to {} eV/atom '.format(
-                    organism.id, organism.ef_ads))
-                    
+                    organism.id, organism.epa))
+
         dictionary[key] = organism
 
     def conform_to_lammps(self, cell):
@@ -416,7 +418,7 @@ class LammpsEnergyCalculator(object):
 
         # make a LammpsBox object from the bounds and tilts
         lammps_box = LammpsBox(box_bounds, tilt=box_tilts)
-        
+
         # parse the element symbols and atom_style from the lammps input
         # script, preserving the order in which the element symbols appear
         # TODO: not all formats give the element symbols at the end of the line
@@ -428,7 +430,7 @@ class LammpsEnergyCalculator(object):
         if is_single_element:
             single_element = composition_space.get_all_elements()
             elements_dict[single_element[0].symbol] = single_element[0]
-            
+
         with open(self.input_script, 'r') as f:
             lines = f.readlines()
             for line in lines:
@@ -436,11 +438,11 @@ class LammpsEnergyCalculator(object):
                     atom_style_in_script = line.split()[1]
                 elif not is_single_element and 'pair_coeff' in line:
                     element_symbols = line.split()[-1*num_elements:]
-                    
+
         if not is_single_element:
             for symbol in element_symbols:
                 elements_dict[symbol] = Element(symbol)
-                
+
          # make a LammpsData object and use it write the in.data file
         force_field = ForceField(elements_dict.items())
         topology = Topology(organism.cell.sites)

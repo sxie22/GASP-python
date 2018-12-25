@@ -48,21 +48,7 @@ def main():
     # make the objects needed by the algorithm
     objects_dict = objects_maker.make_objects(parameters)
 
-    # get the objects from the dictionary for convenience
-    run_dir_name = objects_dict['run_dir_name']
-    organism_creators = objects_dict['organism_creators']
-    num_calcs_at_once = objects_dict['num_calcs_at_once']
-    composition_space = objects_dict['composition_space']
-    constraints = objects_dict['constraints']
     geometry = objects_dict['geometry']
-    developer = objects_dict['developer']
-    redundancy_guard = objects_dict['redundancy_guard']
-    stopping_criteria = objects_dict['stopping_criteria']
-    energy_calculator = objects_dict['energy_calculator']
-    pool = objects_dict['pool']
-    variations = objects_dict['variations']
-    id_generator = objects_dict['id_generator']
-
     # create E_sub_prim and n_sub_prim
     E_sub_prim, n_sub_prim = None, None
     substrate_search = False
@@ -72,8 +58,22 @@ def main():
     if substrate_search:
         match_constraints = objects_maker.get_lat_match_params(parameters)
         E_sub_prim, n_sub_prim = objects_maker.get_prim_sub_data(parameters)
-        # Provide the POSCAR of primitve substrate as second argument
+        # Parse the primitve substrate structure from input argument
         substrate_prim = general.Cell.from_file(os.path.abspath(sys.argv[2]))
+
+    # get the objects from the dictionary for convenience
+    run_dir_name = objects_dict['run_dir_name']
+    organism_creators = objects_dict['organism_creators']
+    num_calcs_at_once = objects_dict['num_calcs_at_once']
+    composition_space = objects_dict['composition_space']
+    constraints = objects_dict['constraints']
+    developer = objects_dict['developer']
+    redundancy_guard = objects_dict['redundancy_guard']
+    stopping_criteria = objects_dict['stopping_criteria']
+    energy_calculator = objects_dict['energy_calculator']
+    pool = objects_dict['pool']
+    variations = objects_dict['variations']
+    id_generator = objects_dict['id_generator']
 
     # get the path to the run directory - append date and time if
     # the given or default run directory already exists
@@ -181,18 +181,9 @@ def main():
                                     redundancy_guard.check_redundancy(
                                         relaxed_organism, whole_pop, geometry)
                                 if redundant_organism is not None:  # redundant
-                                    replace_org = False
-                                    if substrate_search:
-                                        if redundant_organism.is_active and \
-                                                redundant_organism.ef_ads > \
-                                                relaxed_organism.ef_ads:
-                                            replace_org = True
-                                    else:
-                                        if redundant_organism.is_active and \
-                                                redundant_organism.epa > \
-                                                relaxed_organism.epa:
-                                            replace_org = True
-                                    if replace_org:
+                                    if redundant_organism.is_active and \
+                                            redundant_organism.epa > \
+                                            relaxed_organism.epa:
                                         initial_population.replace_organism(
                                                 redundant_organism,
                                                 relaxed_organism,
@@ -301,18 +292,9 @@ def main():
                         redundant_organism = redundancy_guard.check_redundancy(
                             relaxed_organism, whole_pop, geometry)
                         if redundant_organism is not None:  # redundant
-                            replace_org = False
-                            if substrate_search:
-                                if redundant_organism.is_active and \
-                                        redundant_organism.ef_ads > \
-                                        relaxed_organism.ef_ads:
-                                    replace_org = True
-                            else:
-                                if redundant_organism.is_active and \
+                            if redundant_organism.is_active and \
                                         redundant_organism.epa > \
                                         relaxed_organism.epa:
-                                    replace_org = True
-                            if replace_org:
                                 initial_population.replace_organism(
                                     redundant_organism, relaxed_organism,
                                     composition_space)
@@ -399,16 +381,7 @@ def main():
                         redundant_organism = redundancy_guard.check_redundancy(
                             relaxed_offspring, pool.to_list(), geometry)
                         if redundant_organism is not None:  # redundant
-                            replace_org = False
-                            if substrate_search:
-                                if redundant_organism.ef_ads > \
-                                        relaxed_organism.ef_ads:
-                                    replace_org = True
-                            else:
-                                if redundant_organism.epa > \
-                                        relaxed_organism.epa:
-                                    replace_org = True
-                            if replace_org:
+                            if redundant_organism.epa > relaxed_organism.epa:
                                 pool.replace_organism(redundant_organism,
                                                       relaxed_offspring,
                                                       composition_space)
@@ -519,16 +492,7 @@ def main():
                         redundant_organism = redundancy_guard.check_redundancy(
                             relaxed_offspring, pool.to_list(), geometry)
                         if redundant_organism is not None:  # redundant
-                            replace_org = False
-                            if substrate_search:
-                                if redundant_organism.ef_ads > \
-                                        relaxed_organism.ef_ads:
-                                    replace_org = True
-                            else:
-                                if redundant_organism.epa > \
-                                        relaxed_organism.epa:
-                                    replace_org = True
-                            if replace_org:
+                            if redundant_organism.epa > relaxed_organism.epa:
                                 pool.replace_organism(redundant_organism,
                                                       relaxed_offspring,
                                                       composition_space)

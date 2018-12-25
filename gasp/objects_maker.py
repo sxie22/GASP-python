@@ -40,10 +40,34 @@ def make_objects(parameters):
     # to hold all the objects
     objects_dict = {}
 
+    # make the geometry object
+    if 'Geometry' not in parameters:
+        geometry = geo.Bulk()
+    elif parameters['Geometry'] in (None, 'default'):
+        geometry = geo.Bulk()
+    elif 'shape' not in parameters['Geometry']:
+        geometry = geo.Bulk()
+    elif parameters['Geometry']['shape'] == 'cluster':
+        geometry = geo.Cluster(parameters['Geometry'])
+    elif parameters['Geometry']['shape'] == 'wire':
+        geometry = geo.Wire(parameters['Geometry'])
+    elif parameters['Geometry']['shape'] == 'sheet':
+        geometry = geo.Sheet(parameters['Geometry'])
+    elif parameters['Geometry']['shape'] == 'interface':
+        geometry = geo.Substrate_2D(parameters['Geometry'])
+    # TODO: add any other non-bulk geometries here
+    else:
+        geometry = geo.Bulk()
+
+    objects_dict['geometry'] = geometry
+    substrate_search = False
+    if geometry.shape == 'interface':
+        substrate_search = True
+
     # make the composition space object
     if 'CompositionSpace' in parameters:
         composition_space = general.CompositionSpace(
-            parameters['CompositionSpace'])
+            parameters['CompositionSpace'], sub_search=substrate_search)
     else:
         print('Input file must contain a "CompositionSpace" block.')
         print("Quitting...")
@@ -65,27 +89,6 @@ def make_objects(parameters):
         constraints = development.Constraints('default', composition_space)
 
     objects_dict['constraints'] = constraints
-
-    # make the geometry object
-    if 'Geometry' not in parameters:
-        geometry = geo.Bulk()
-    elif parameters['Geometry'] in (None, 'default'):
-        geometry = geo.Bulk()
-    elif 'shape' not in parameters['Geometry']:
-        geometry = geo.Bulk()
-    elif parameters['Geometry']['shape'] == 'cluster':
-        geometry = geo.Cluster(parameters['Geometry'])
-    elif parameters['Geometry']['shape'] == 'wire':
-        geometry = geo.Wire(parameters['Geometry'])
-    elif parameters['Geometry']['shape'] == 'sheet':
-        geometry = geo.Sheet(parameters['Geometry'])
-    elif parameters['Geometry']['shape'] == 'interface':
-        geometry = geo.Substrate_2D(parameters['Geometry'])
-    # TODO: add any other non-bulk geometries here
-    else:
-        geometry = geo.Bulk()
-
-    objects_dict['geometry'] = geometry
 
     # make the development object
     if 'Development' in parameters:

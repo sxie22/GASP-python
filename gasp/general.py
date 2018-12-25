@@ -118,7 +118,6 @@ class Organism(object):
         # Substrate related defaults
         # Number of atoms of the substrate in the interface
         self.n_sub = None
-        self.ef_ads = None
         self.z_upper_bound=None
 
 
@@ -605,7 +604,7 @@ class CompositionSpace(object):
     Represents the composition space to be searched by the algorithm.
     """
 
-    def __init__(self, endpoints):
+    def __init__(self, endpoints, sub_search=False):
         """
         Makes a CompositionSpace, which is list of
         pymatgen.core.composition.Composition objects.
@@ -619,6 +618,9 @@ class CompositionSpace(object):
             endpoints[i] = endpoints[i].reduced_composition
 
         self.endpoints = endpoints
+
+        # If it is substrate search, set these defaults and new_obj_fn
+        self.sub_search = sub_search
 
         # objective function lives here
         self.objective_function = self.infer_objective_function()
@@ -636,6 +638,9 @@ class CompositionSpace(object):
         on the composition space.
 
         Returns either 'epa' or 'pd'.
+
+        For substrate search, epa is the energy of formation of adsorption
+        on substrate.
         """
 
         if len(self.endpoints) == 1:
