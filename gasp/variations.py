@@ -266,7 +266,7 @@ class Mating(object):
             abc_lengths = cell.lattice.abc
             smallest_vector = min(abc_lengths)
             doubling_index = abc_lengths.index(smallest_vector)
-        elif geometry.shape == 'sheet':
+        elif geometry.shape == 'sheet' or geometry.shape == 'interface':
             ab_lengths = [cell.lattice.a, cell.lattice.b]
             smallest_vector = min(ab_lengths)
             doubling_index = ab_lengths.index(smallest_vector)
@@ -441,7 +441,8 @@ class Mating(object):
             pass
         elif geometry.shape == 'wire' and lattice_vector_index != 2:
             pass
-        elif geometry.shape == 'sheet' and lattice_vector_index == 2:
+        elif geometry.shape == 'sheet' or geometry.shape == 'interface'
+                                                and lattice_vector_index == 2:
             pass
         else:
             # do the shift
@@ -488,7 +489,7 @@ class Mating(object):
             random: copy of Python's built in PRNG
         """
 
-        if geometry.shape == 'bulk' or geometry.shape == 'sheet':
+        if geometry.shape in {'bulk', 'sheet', 'interface'}:
             pass
         else:
             geometry.pad(cell, padding=100)
