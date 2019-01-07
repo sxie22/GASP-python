@@ -441,7 +441,7 @@ class Mating(object):
             pass
         elif geometry.shape == 'wire' and lattice_vector_index != 2:
             pass
-        elif geometry.shape == 'sheet' or geometry.shape == 'interface'
+        elif geometry.shape == 'sheet' or geometry.shape == 'interface' \
                                                 and lattice_vector_index == 2:
             pass
         else:
