@@ -319,9 +319,10 @@ def get_uniq_layercoords(struct, nlayers, top=True):
     z = coords[:, 2]
     z = np.around(z, decimals=4)
     zu, zuind = np.unique(z, return_index=True)
-    z_nthlayer = z[zuind[-nlayers]]
-    zfilter = (z >= z_nthlayer)
-    if not top:
+    if top:
+        z_nthlayer = z[zuind[-nlayers]]
+        zfilter = (z >= z_nthlayer)
+    else:
         z_nthlayer = z[zuind[nlayers - 1]]
         zfilter = (z <= z_nthlayer)
     # site indices in the layers
