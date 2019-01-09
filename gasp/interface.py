@@ -10,6 +10,7 @@ Compute the reduced matching lattice vectors for heterostructure
 interfaces as described in the paper by Zur and McGill:
 Journal of Applied Physics 55, 378 (1984); doi: 10.1063/1.333084
 """
+from gasp.general import Cell
 
 from six.moves import range
 import sys
@@ -512,7 +513,6 @@ def run_lat_match(substrate, twod_layer, match_constraints):
                             max_angle_diff=max_angle_diff,
 			                r1r2_tol=r1r2_tol)
 
-    #If opt is set to true, returns only optimum structures uv.
     #merge substrate and mat2d in all possible ways
     hetero_interfaces = None
     if sub and mat2d:
@@ -522,7 +522,9 @@ def run_lat_match(substrate, twod_layer, match_constraints):
         n_sub = sub.num_sites
         z_coords_sub = sub.frac_coords[:, 2]
         z_upper_bound = np.unique(z_coords_sub)[-sd_layers]
+               
     if hetero_interfaces:
-        return  hetero_interfaces[0], n_sub, z_upper_bound
+        interface_cell = Cell(hetero_interfaces[0])
+        return  interface_cell, n_sub, z_upper_bound
     else:
         return None, None, None

@@ -215,6 +215,8 @@ class Cell(Structure):
     Represents a cell. Provides additional functionality to the
     pymatgen.core.structure.Structure class.
     """
+    def __init__(self):
+        super(Structure, self).__init__()
 
     def rotate_to_principal_directions(self):
         """
