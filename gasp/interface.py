@@ -523,8 +523,10 @@ def run_lat_match(substrate, twod_layer, match_constraints):
         z_coords_sub = sub.frac_coords[:, 2]
         z_upper_bound = np.unique(z_coords_sub)[-sd_layers]
                
-    if hetero_interfaces:
-        interface_cell = Cell(hetero_interfaces[0])
+    if hetero_interfaces: 
+        new_cell = hetero_interfaces[0]
+        interface_cell = Cell(new_cell.lattice, new_cell.species, 
+                              new_cell.cart_coords, coords_are_cartesian=True)
         return  interface_cell, n_sub, z_upper_bound
     else:
         return None, None, None

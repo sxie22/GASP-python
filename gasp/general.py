@@ -222,9 +222,12 @@ class Cell(Structure):
         Takes all the attributes from Structure object and makes it into
         a Cell object.
         """
-        super(Structure, self).__init__(lattice, species, coords,
-                 charge=None, validate_proximity=False, to_unit_cell=False,
-                 coords_are_cartesian=False, site_properties=None)
+        super(Cell, self).__init__(lattice, species, coords, charge=charge, 
+                                        validate_proximity=validate_proximity, 
+                                        to_unit_cell=to_unit_cell,
+                                        coords_are_cartesian=coords_are_cartesian, 
+                                        site_properties=site_properties)       
+
 
     def rotate_to_principal_directions(self):
         """
