@@ -339,7 +339,7 @@ class LammpsEnergyCalculator(object):
         organism.epa = epa
         print('Setting energy of organism {} to {} eV/atom '.format(
             organism.id, organism.epa))
-
+        enthalpy = total_energy
         # If substrate search, obtain obj fn ef_ads
         if E_sub_prim is not None and n_sub_prim is not None:
             n_iface = relaxed_cell.num_sites
@@ -347,7 +347,7 @@ class LammpsEnergyCalculator(object):
             n_twod = n_iface - n_sub
             factor = n_sub/n_sub_prim
             ef_ads = enthalpy / n_twod - factor * E_sub_prim / n_twod
-            organism.total_energy = enthalpy = factor * E_sub_prim
+            organism.total_energy = enthalpy - factor * E_sub_prim
             organism.epa = ef_ads
             print ('Setting Ef_adsorption of organism {} to {} eV/atom '.format(
                     organism.id, organism.epa))
