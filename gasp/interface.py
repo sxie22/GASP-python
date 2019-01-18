@@ -262,6 +262,11 @@ def get_matching_lattices(iface1, iface2, max_area=100,
                     if angle_mismatch < max_angle_diff:
                         found.append((uv1, uv2, max(area1, area2), u_mismatch,
                                       v_mismatch, angle_mismatch))
+        # to increase the speed of the algorithm
+        # Since the algorithm searches by increasing order from r_list,
+        # lowest area match is found first                              
+        if found:
+            break   # stop searching other matches when first match is found
 
     if found:
         print('\nMATCH FOUND\n')
@@ -522,10 +527,10 @@ def run_lat_match(substrate, twod_layer, match_constraints):
         n_sub = sub.num_sites
         z_coords_sub = sub.frac_coords[:, 2]
         z_upper_bound = np.unique(z_coords_sub)[-sd_layers]
-               
-    if hetero_interfaces: 
+
+    if hetero_interfaces:
         new_cell = hetero_interfaces[0]
-        interface_cell = Cell(new_cell.lattice, new_cell.species, 
+        interface_cell = Cell(new_cell.lattice, new_cell.species,
                               new_cell.cart_coords, coords_are_cartesian=True)
         return  interface_cell, n_sub, z_upper_bound
     else:
