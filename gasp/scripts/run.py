@@ -135,21 +135,36 @@ def main():
                         redundant_organism = redundancy_guard.check_redundancy(
                             new_organism, whole_pop, geometry)
                         if redundant_organism is None:  # no redundancy
-                            geometry.pad(new_organism.cell)
                             kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
+                            added_to_whole_pop = False
                             if substrate_search:
-                                new_organism.cell, new_organism.n_sub, \
-                                            new_organism.z_upper_bound = \
-                                            interface.run_lat_match( \
-                                            substrate_prim, new_organism.cell, \
+                                # make a copy of new_organism
+                                # if lattice match succeeds, the original
+                                # new_organism appends to whole_pop
+                                copy_organism = new_organism
+                                geometry.pad(copy_organism.cell)
+                                copy_organism.cell, copy_organism.n_sub, \
+                                            copy_organism.z_upper_bound = \
+                                            interface.run_lat_match(
+                                            substrate_prim, copy_organism.cell,
                                             match_constraints)
                                 kwargs['E_sub_prim'] = E_sub_prim
                                 kwargs['n_sub_prim'] = n_sub_prim
-                                if new_organism.cell is None:
+
+                                if copy_organism.cell is not None: #LMA succeeds
+                                    # append original new_organism to whole_pop
+                                    whole_pop.append(copy.deepcopy(new_organism))
+                                    added_to_whole_pop = True
+                                    # This will change the new_organism to be
+                                    # lattice matched and vacuum padded
+                                    new_organism = copy_organism
+                                else:
                                     continue
                             # add a copy to whole_pop so the organisms in
                             # whole_pop don't change upon relaxation
-                            whole_pop.append(copy.deepcopy(new_organism))
+                            if not added_to_whole_pop:
+                                whole_pop.append(copy.deepcopy(new_organism))
+                                geometry.pad(new_organism.cell)
                             stopping_criteria.update_calc_counter()
                             index = len(threads)
                             thread = threading.Thread(
@@ -240,21 +255,33 @@ def main():
                                         redundancy_guard.check_redundancy(
                                             new_organism, whole_pop, geometry)
                                     if redundant_organism is None:  # not redundant
-                                        geometry.pad(new_organism.cell)
-                                        kwargs = {'E_sub_prim': None,
-                                                            'n_sub_prim': None}
+                                        kwargs = {'E_sub_prim': None, \
+                                                    'n_sub_prim': None}
+                                        added_to_whole_pop = False
                                         if substrate_search:
-                                            new_organism.cell, new_organism.n_sub, \
-                                                new_organism.z_upper_bound = \
-                                                interface.run_lat_match(
-                                                substrate_prim, new_organism.cell,
-                                                        match_constraints)
+                                            copy_organism = new_organism
+                                            geometry.pad(copy_organism.cell)
+                                            copy_organism.cell, \
+                                            copy_organism.n_sub, \
+                                            copy_organism.z_upper_bound = \
+                                                    interface.run_lat_match(
+                                                    substrate_prim,
+                                                    copy_organism.cell,
+                                                    match_constraints)
                                             kwargs['E_sub_prim'] = E_sub_prim
                                             kwargs['n_sub_prim'] = n_sub_prim
-                                            if new_organism.cell is None:
+
+                                            if copy_organism.cell is not None:
+                                                whole_pop.append(
+                                                    copy.deepcopy(new_organism))
+                                                added_to_whole_pop = True
+                                                new_organism = copy_organism
+                                            else:
                                                 continue
-                                        whole_pop.append(
-                                            copy.deepcopy(new_organism))
+                                        if not added_to_whole_pop:
+                                            whole_pop.append(
+                                                copy.deepcopy(new_organism))
+                                            geometry.pad(new_organism.cell)
                                         stopping_criteria.update_calc_counter()
                                         new_thread = threading.Thread(
                                             target=energy_calculator.do_energy_calculation,
@@ -341,19 +368,25 @@ def main():
         unrelaxed_offspring = offspring_generator.make_offspring_organism(
             random, pool, variations, geometry, id_generator, whole_pop,
             developer, redundancy_guard, composition_space, constraints)
-        geometry.pad(unrelaxed_offspring.cell)
         kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
+        added_to_whole_pop = False
         if substrate_search:
-            unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
-                                unrelaxed_offspring.z_upper_bound = \
-                                        interface.run_lat_match(
-                                        substrate_prim, unrelaxed_offspring.cell,
-                                        match_constraints)
+            copy_offspring = unrelaxed_offspring
+            geometry.pad(copy_offspring.cell)
+            copy_offspring.cell, copy_offspring.n_sub, \
+                copy_offspring.z_upper_bound = interface.run_lat_match(
+                        substrate_prim, copy_offspring.cell, match_constraints)
             kwargs['E_sub_prim'] = E_sub_prim
             kwargs['n_sub_prim'] = n_sub_prim
-            if unrelaxed_offspring.cell is None:
+            if copy_offspring.cell is not None:
+                whole_pop.append(copy.deepcopy(unrelaxed_offspring))
+                added_to_whole_pop = True
+                unrelaxed_offspring = copy_offspring
+            else:
                 continue
-        whole_pop.append(copy.deepcopy(unrelaxed_offspring))
+        if not added_to_whole_pop:
+            whole_pop.append(copy.deepcopy(unrelaxed_offspring))
+            geometry.pad(unrelaxed_offspring.cell)
         stopping_criteria.update_calc_counter()
         index = len(threads)
         new_thread = threading.Thread(
@@ -381,7 +414,7 @@ def main():
                         redundant_organism = redundancy_guard.check_redundancy(
                             relaxed_offspring, pool.to_list(), geometry)
                         if redundant_organism is not None:  # redundant
-                            if redundant_organism.epa > relaxed_organism.epa:
+                            if redundant_organism.epa > relaxed_offspring.epa:
                                 pool.replace_organism(redundant_organism,
                                                       relaxed_offspring,
                                                       composition_space)
@@ -447,20 +480,25 @@ def main():
                             random, pool, variations, geometry, id_generator,
                             whole_pop, developer, redundancy_guard,
                             composition_space, constraints)
-                    geometry.pad(unrelaxed_offspring.cell)
                     kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
+                    added_to_whole_pop = False
                     if substrate_search:
-                        unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
-                                            unrelaxed_offspring.z_upper_bound = \
-                                            interface.run_lat_match(
-                                                    substrate_prim,
-                                                    unrelaxed_offspring.cell,
-                                                    match_constraints)
+                        copy_offspring = unrelaxed_offspring
+                        geometry.pad(copy_offspring.cell)
+                        copy_offspring.cell, copy_offspring.n_sub, \
+                            copy_offspring.z_upper_bound = interface.run_lat_match(
+                                    substrate_prim, copy_offspring.cell, match_constraints)
                         kwargs['E_sub_prim'] = E_sub_prim
                         kwargs['n_sub_prim'] = n_sub_prim
-                        if unrelaxed_offspring.cell is None:
+                        if copy_offspring.cell is not None:
+                            whole_pop.append(copy.deepcopy(unrelaxed_offspring))
+                            added_to_whole_pop = True
+                            unrelaxed_offspring = copy_offspring
+                        else:
                             continue
-                    whole_pop.append(copy.deepcopy(unrelaxed_offspring))
+                    if not added_to_whole_pop:
+                        whole_pop.append(copy.deepcopy(unrelaxed_offspring))
+                        geometry.pad(unrelaxed_offspring.cell)
                     stopping_criteria.update_calc_counter()
                     new_thread = threading.Thread(
                         target=energy_calculator.do_energy_calculation,
@@ -492,7 +530,7 @@ def main():
                         redundant_organism = redundancy_guard.check_redundancy(
                             relaxed_offspring, pool.to_list(), geometry)
                         if redundant_organism is not None:  # redundant
-                            if redundant_organism.epa > relaxed_organism.epa:
+                            if redundant_organism.epa > relaxed_offspring.epa:
                                 pool.replace_organism(redundant_organism,
                                                       relaxed_offspring,
                                                       composition_space)

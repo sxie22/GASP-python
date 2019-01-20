@@ -278,7 +278,8 @@ class LammpsEnergyCalculator(object):
             n_sub = organism.n_sub
             z_upper_bound = organism.z_upper_bound
             self.write_poscar(cell, n_sub, z_upper_bound, job_dir_path)
-        organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR.' +
+        else:
+            organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR.' +
                          str(organism.id) + '_unrelaxed')
 
         # run 'calllammps' script as a subprocess to run LAMMPS
@@ -337,10 +338,9 @@ class LammpsEnergyCalculator(object):
         organism.cell = relaxed_cell
         organism.total_energy = total_energy
         organism.epa = epa
-        print('Setting energy of organism {} to {} eV/atom '.format(
-            organism.id, organism.epa))
-        enthalpy = total_energy
+
         # If substrate search, obtain obj fn ef_ads
+        enthalpy = total_energy
         if E_sub_prim is not None and n_sub_prim is not None:
             n_iface = relaxed_cell.num_sites
             n_sub = organism.n_sub
@@ -351,6 +351,9 @@ class LammpsEnergyCalculator(object):
             organism.epa = ef_ads
             print ('Setting Ef_adsorption of organism {} to {} eV/atom '.format(
                     organism.id, organism.epa))
+        else:
+            print('Setting energy of organism {} to {} eV/atom '.format(
+                        organism.id, organism.epa))
 
         dictionary[key] = organism
 
@@ -666,7 +669,7 @@ class GulpEnergyCalculator(object):
         return anions_shell, cations_shell
 
     def do_energy_calculation(self, organism, dictionary, key,
-                              composition_space):
+                        composition_space, E_sub_prim=None, n_sub_prim=None):
         """
         Calculates the energy of an organism using GULP, and stores the relaxed
         organism in the provided dictionary at the provided key. If the
