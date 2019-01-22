@@ -751,6 +751,7 @@ class Substrate_2D(object):
         else:
             ind_sub = n_sub
 
+        n_twod = len(cell.sites) - ind_sub
         # all_z[n_sub] belongs to the first twod site
         twod_thickness = all_z[-1] - all_z[ind_sub]
         twod_lattice = Lattice([[ax, 0.0, 0.0], [bx, by, 0.0],
@@ -760,7 +761,7 @@ class Substrate_2D(object):
 
         # index of all the twod sites in the interface cell
         all_ind = range(len(cartesian_coords))
-        twod_ind = all_ind[-ind_sub:]
+        twod_ind = all_ind[-n_twod:]
 
         # Add 2D atomic sites to the 2D lattice
         site_indices = []
