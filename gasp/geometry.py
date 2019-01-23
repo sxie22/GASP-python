@@ -768,6 +768,7 @@ class Substrate_2D(object):
         for i in range(len(twod_cell.sites)):
             site_indices.append(i)
         twod_cell.remove_sites(site_indices)
+        cartesian_coords = sorted(cartesian_coords, key=lambda x: x[2])
         for i in twod_ind:
             twod_cell.append(species[i], cartesian_coords[i],
                                 coords_are_cartesian=True)
