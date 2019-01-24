@@ -135,36 +135,25 @@ def main():
                         redundant_organism = redundancy_guard.check_redundancy(
                             new_organism, whole_pop, geometry)
                         if redundant_organism is None:  # no redundancy
+                            # add a copy to whole_pop so the organisms in
+                            # whole_pop don't change upon relaxation
+                            whole_pop.append(copy.deepcopy(new_organism))
+                            # pad with vacuum
+                            geometry.pad(new_organism.cell)
                             kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
-                            added_to_whole_pop = False
                             if substrate_search:
-                                # make a copy of new_organism
-                                # if lattice match succeeds, the original
-                                # new_organism appends to whole_pop
-                                copy_organism = new_organism
-                                geometry.pad(copy_organism.cell)
-                                copy_organism.cell, copy_organism.n_sub, \
-                                            copy_organism.z_upper_bound = \
+                                # lattice match substrate
+                                new_organism.cell, new_organism.n_sub, \
+                                            new_organism.z_upper_bound = \
                                             interface.run_lat_match(
-                                            substrate_prim, copy_organism.cell,
+                                            substrate_prim, new_organism.cell,
                                             match_constraints)
                                 kwargs['E_sub_prim'] = E_sub_prim
                                 kwargs['n_sub_prim'] = n_sub_prim
-
-                                if copy_organism.cell is not None: #LMA succeeds
-                                    # append original new_organism to whole_pop
-                                    whole_pop.append(copy.deepcopy(new_organism))
-                                    added_to_whole_pop = True
-                                    # This will change the new_organism to be
-                                    # lattice matched and vacuum padded
-                                    new_organism = copy_organism
-                                else:
+                                if new_organism.cell is None: #if LMA fail
+                                    # remove the organism from whole_pop
+                                    del whole_pop[-1]
                                     continue
-                            # add a copy to whole_pop so the organisms in
-                            # whole_pop don't change upon relaxation
-                            if not added_to_whole_pop:
-                                whole_pop.append(copy.deepcopy(new_organism))
-                                geometry.pad(new_organism.cell)
                             stopping_criteria.update_calc_counter()
                             index = len(threads)
                             thread = threading.Thread(
