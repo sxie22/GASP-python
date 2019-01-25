@@ -16,7 +16,6 @@ from six.moves import range
 import sys
 from math import sqrt
 import numpy as np
-import time
 
 from pymatgen.core.structure import Structure
 from pymatgen.core.lattice import Lattice
@@ -235,7 +234,6 @@ def get_matching_lattices(iface1, iface2, max_area=100,
         return None, None
         #sys.exit()
     found = []
-    timeout = time.time() + 59 # timeout is 59 seconds from now
     #print('searching ...')
     uv1_list, tm1_list, uv2_list, tm2_list = [], [], [], []
     for r1r2 in r_list:
@@ -268,7 +266,7 @@ def get_matching_lattices(iface1, iface2, max_area=100,
         # Since the algorithm searches by increasing order from r_list,
         # lowest area match is found first
         # Or if past 59 seconds from the search loop , exit
-                if found or time.time() > timeout:
+                if found:
                     break   # stop searching when first match is found
 
     if found:
