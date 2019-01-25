@@ -254,13 +254,13 @@ def main():
                                                             'n_sub_prim': None}
                                         if substrate_search:
                                             # lattice match substrate
-                                            new_organism.cell,
+                                            new_organism.cell, \
                                             new_organism.n_sub, \
                                             new_organism.z_upper_bound = \
                                                         interface.run_lat_match(
                                                         substrate_prim,
                                                         new_organism.cell,
-                                                        match_constraints)
+              d                                         match_constraints)
                                             kwargs['E_sub_prim'] = E_sub_prim
                                             kwargs['n_sub_prim'] = n_sub_prim
                                             if new_organism.cell is None: #if LMA fail
