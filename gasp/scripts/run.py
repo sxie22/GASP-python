@@ -260,7 +260,7 @@ def main():
                                                         interface.run_lat_match(
                                                         substrate_prim,
                                                         new_organism.cell,
-              d                                         match_constraints)
+                                                        match_constraints)
                                             kwargs['E_sub_prim'] = E_sub_prim
                                             kwargs['n_sub_prim'] = n_sub_prim
                                             if new_organism.cell is None: #if LMA fail
