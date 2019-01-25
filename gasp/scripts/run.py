@@ -470,7 +470,7 @@ def main():
                                 substrate_prim, unrelaxed_offspring.cell, match_constraints)
                         kwargs['E_sub_prim'] = E_sub_prim
                         kwargs['n_sub_prim'] = n_sub_prim
-                        if copy_offspring.cell is None:
+                        if unrelaxed_offspring.cell is None:
                             del whole_pop[-1]
                             continue
                     stopping_criteria.update_calc_counter()
