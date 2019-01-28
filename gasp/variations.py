@@ -501,7 +501,8 @@ class Mating(object):
                 self.rotate_about_axis(cell, [0, 0, 1], random.random()*360)
             cell.translate_atoms_into_cell()
             cell.rotate_to_principal_directions()
-            geometry.unpad(cell, constraints)
+            n_sub = None
+            geometry.unpad(cell, n_sub, constraints)
 
     def rotate_about_axis(self, cell, axis, angle):
         """
@@ -599,7 +600,8 @@ class Mating(object):
 
         # make a new cell and unpad it
         new_cell = Cell(cell.lattice, species, frac_coords)
-        geometry.unpad(new_cell, constraints)
+        n_sub = None
+        geometry.unpad(new_cell, n_sub, constraints)
 
         # if any merges were done, call merge_sites recursively on the new
         # cell
@@ -807,7 +809,8 @@ class StructureMut(object):
                     frac_coords=False, to_unit_cell=True)
 
         # unpad the cell
-        geometry.unpad(cell, constraints)
+        n_sub = None
+        geometry.unpad(cell, n_sub, constraints)
 
     def perturb_lattice_vectors(self, cell, random):
         """
