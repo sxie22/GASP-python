@@ -349,14 +349,14 @@ def main():
 
     # create the initial batch of offspring organisms and submit them for
     # energy calculations
-    for _ in range(num_calcs_at_once):
+    # while statement because unrelaxed_offspring could fail lattice matching
+    while len(threads) < num_calcs_at_once: 
         unrelaxed_offspring = offspring_generator.make_offspring_organism(
             random, pool, variations, geometry, id_generator, whole_pop,
             developer, redundancy_guard, composition_space, constraints)
         whole_pop.append(copy.deepcopy(unrelaxed_offspring))
         geometry.pad(unrelaxed_offspring.cell)
         kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
-        added_to_whole_pop = False
         if substrate_search:
             geometry.pad(unrelaxed_offspring.cell)
             unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
