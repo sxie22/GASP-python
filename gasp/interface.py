@@ -510,14 +510,18 @@ def run_lat_match(substrate, twod_layer, match_constraints):
     twod_prim = twod_layer.get_primitive_structure()
     substrate_prim = substrate.get_primitive_structure()
 
-    #get aligned lattices
-    sub, mat2d = get_aligned_lattices(
+    try:
+        #get aligned lattices
+        sub, mat2d = get_aligned_lattices(
                             substrate_prim,
                             twod_prim,
                             max_area=max_area,
                             max_mismatch=max_mismatch,
                             max_angle_diff=max_angle_diff,
 			                r1r2_tol=r1r2_tol)
+    except:
+        print ('Lattice match failed..')
+        return None, None, None    
 
     #merge substrate and mat2d in all possible ways
     hetero_interfaces = None
