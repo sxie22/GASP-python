@@ -520,15 +520,19 @@ def run_lat_match(substrate, twod_layer, match_constraints):
                             max_angle_diff=max_angle_diff,
 			                r1r2_tol=r1r2_tol)
     except:
-        print ('Lattice match failed..')
-        return None, None, None    
+        print ('Lattice match failed at get_aligned_lattices..')
+        return None, None, None
 
     #merge substrate and mat2d in all possible ways
     hetero_interfaces = None
     if sub and mat2d:
-        hetero_interfaces = generate_all_configs(sub, mat2d,
+        try:
+            hetero_interfaces = generate_all_configs(sub, mat2d,
                                      nlayers_2d, nlayers_substrate,
                                      separation)
+        except:
+            print('Lattice match failed at generate_all_configs..')
+            return None, None, None                             
         n_sub = sub.num_sites
         z_coords_sub = sub.frac_coords[:, 2]
         z_upper_bound = np.unique(z_coords_sub)[-sd_layers]
