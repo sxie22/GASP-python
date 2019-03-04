@@ -532,10 +532,14 @@ def run_lat_match(substrate, twod_layer, match_constraints):
                                      separation)
         except:
             print('Lattice match failed at generate_all_configs..')
-            return None, None, None                             
+            return None, None, None
         n_sub = sub.num_sites
         z_coords_sub = sub.frac_coords[:, 2]
-        z_upper_bound = np.unique(z_coords_sub)[-sd_layers]
+        z_max = np.unique(z_coords_sub)[-1]
+        if sd_layers == 0: # freeze all substrate atoms
+            z_upper_bound = z_max + 0.1
+        else:    # relax top layer of substrate atoms
+            z_upper_bound = np.unique(z_coords_sub)[-sd_layers]
 
     if hetero_interfaces:
         new_cell = hetero_interfaces[0]
