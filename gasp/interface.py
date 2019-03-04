@@ -362,7 +362,7 @@ def generate_all_configs(substrate, mat2d,
         substrate: Lattice and symmetry-matched 2D substrate structure
         nlayers_substrate: number of substrate layers
         nlayers_2d: number of 2d material layers
-        seperation: seperation between the substrate and the 2d
+        separation: separation between the substrate and the 2d
                     material
     Returns:
         None

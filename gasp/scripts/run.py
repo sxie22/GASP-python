@@ -18,6 +18,7 @@ from gasp import population
 from gasp import objects_maker
 from gasp import parameters_printer
 from gasp import interface
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 import copy
 import threading
@@ -59,7 +60,10 @@ def main():
         match_constraints = objects_maker.get_lat_match_params(parameters)
         E_sub_prim, n_sub_prim = objects_maker.get_prim_sub_data(parameters)
         # Parse the primitve substrate structure from input argument
-        substrate_prim = general.Cell.from_file(os.path.abspath(sys.argv[2]))
+        sub_cell = general.Cell.from_file(os.path.abspath(sys.argv[2]))
+        # make it conventional_standard_structure using pymatgen to avoid issues
+        spgr_obj = SpacegroupAnalyzer(sub_cell)
+        substrate_prim = spgr_obj.get_conventional_standard_structure()
 
     # get the objects from the dictionary for convenience
     run_dir_name = objects_dict['run_dir_name']
@@ -350,7 +354,7 @@ def main():
     # create the initial batch of offspring organisms and submit them for
     # energy calculations
     # while statement because unrelaxed_offspring could fail lattice matching
-    while len(threads) < num_calcs_at_once: 
+    while len(threads) < num_calcs_at_once:
         unrelaxed_offspring = offspring_generator.make_offspring_organism(
             random, pool, variations, geometry, id_generator, whole_pop,
             developer, redundancy_guard, composition_space, constraints)
