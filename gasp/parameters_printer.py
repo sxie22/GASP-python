@@ -216,6 +216,8 @@ def print_parameters(objects_dict, lat_match_dict=None):
                               str(constraints.min_num_atoms) + '\n')
         parameters_file.write('    max_num_atoms: ' +
                               str(constraints.max_num_atoms) + '\n')
+        parameters_file.write('    max_interface_atoms: ' +
+                              str(constraints.max_interface_atoms) + '\n')                      
         parameters_file.write('    min_lattice_length: ' +
                               str(constraints.min_lattice_length) + '\n')
         parameters_file.write('    max_lattice_length: ' +
