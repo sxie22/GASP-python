@@ -67,6 +67,7 @@ class Constraints(object):
         self.default_max_lattice_angle = 140
         self.default_allow_endpoints = True
         self.default_mid_factor = 0.6
+        self.default_max_interface_atoms = 50
 
         # set to defaults
         if constraints_parameters in (None, 'default'):
@@ -88,6 +89,14 @@ class Constraints(object):
                 self.max_num_atoms = self.default_max_num_atoms
             else:
                 self.max_num_atoms = constraints_parameters['max_num_atoms']
+
+            # max number of atoms in interface structures (substrate search)
+            if 'max_interface_atoms' not in constraints_parameters:
+                self.max_interface_atoms = self.default_max_interface_atoms
+            elif constraints_parameters['max_intreface_atoms'] in (None, 'default'):
+                self.max_interface_atoms = self.default_max_interface_atoms
+            else:
+                self.max_interface_atoms = constraints_parameters['max_interface_atoms']
 
             # min lattice length
             if 'min_lattice_length' not in constraints_parameters:
@@ -748,6 +757,69 @@ class Developer(object):
         # check the min size constraint (can only fail for non-bulk geometries)
         if geometry.get_size(organism.cell) < geometry.min_size:
             print("Organism {} failed min size constraint ".format(
+                organism.id))
+            return False
+        return True
+
+    def post_lma_develop(self, organism, composition_space, constraints, geometry,
+                pool):
+        '''
+        In case of substrate GA, the lattice vecotrs and number of atoms in the
+        organism change post lattice match.
+        This method is similar to Develop(), only with relevant constraints being
+        tested.
+
+        Returns a boolean indicating whether the organism survived development.
+
+        Args:
+            organism: the Organism to develop
+
+            composition_space: the CompositionSpace of the search
+
+            constraints: the Constraints of the search
+
+            geometry: the Geometry of the search
+
+            pool: the Pool
+        '''
+
+        # check the constraints on the number of atoms
+        # LMA changes no. of atoms. Hence required
+        if not self.satisfies_post_lma_n_atoms(organism, constraints):
+            return False
+
+        # check the lattice length and angle constraints
+        # The lattice vectors often changes, hence required
+        if not self.satisfies_lattice_constraints(organism, constraints):
+            return False
+
+        # check the per-species minimum interatomic distance constraints
+        # This does not change during LMA, but does not harm to check again
+        if not self.satisfies_mids_constraints(organism, constraints):
+            return False
+
+        return True
+
+    def satisfies_post_lma_n_atoms(self, organism, constraints):
+        """
+        Returns a boolean indicating whether the organism satisfies the
+        constraints on the number of atoms after lattice matching.
+
+        Args:
+            organism: the Organism to check
+
+            constraints: the Constraints of the search
+        """
+
+        # check max num atoms constraint
+        if len(organism.cell.sites) > constraints.max_interface_atoms:
+            print("Organism {} failed max interface atoms constraint ".format(
+                organism.id))
+            return False
+
+        # check min num atoms constraint
+        if len(organism.cell.sites) < constraints.min_num_atoms:
+            print("Organism {} failed min number of atoms constraint ".format(
                 organism.id))
             return False
         return True
