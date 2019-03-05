@@ -234,6 +234,35 @@ def print_parameters(objects_dict):
                                   '\n')
         parameters_file.write('\n')
 
+        # write lattice matching constraints (if substrate search)
+        if geometry.shape == 'interface':
+            match_constraints = objects_maker.get_lat_match_params(parameters)
+            E_sub_prim, n_sub_prim = objects_maker.get_prim_sub_data(parameters)
+            parameters_file.write('LatticeMatch: \n')
+            parameters_file.write('    max_area: ' +
+                                  str(match_constraints['max_area']) + '\n')
+            parameters_file.write('    max_mismatch: ' +
+                                  str(match_constraints['max_mismatch']) + '\n')
+            parameters_file.write('    max_angle_diff: ' +
+                                  str(match_constraints['max_angle_diff']) + '\n')
+            parameters_file.write('    r1r2_tol: ' +
+                                  str(match_constraints['r1r2_tol']) + '\n')
+            parameters_file.write('    separation: ' +
+                                  str(match_constraints['separation']) + '\n')
+            parameters_file.write('    nlayers_substrate: ' +
+                                  str(match_constraints['nlayers_substrate']) + '\n')
+            parameters_file.write('    nlayers_2d: ' +
+                                  str(match_constraints['nlayers_2d']) + '\n')
+            parameters_file.write('    sd_layers: ' +
+                                  str(match_constraints['sd_layers']) + '\n')
+            parameters_file.write('\n')
+
+            # write user-provided substrate calculation details
+            parameters_file.write('Substrate_prim_calc: \n')
+            parameters_file.write('    E_sub_prim: ' + str(E_sub_prim) + '\n')
+            parameters_file.write('    n_sub_prim: ' + str(n_sub_prim) + '\n')
+            parameters_file.write('\n')
+
         # write the redundancy guard info
         parameters_file.write('RedundancyGuard: \n')
         parameters_file.write('    lattice_length_tol: ' +
