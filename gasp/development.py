@@ -93,7 +93,7 @@ class Constraints(object):
             # max number of atoms in interface structures (substrate search)
             if 'max_interface_atoms' not in constraints_parameters:
                 self.max_interface_atoms = self.default_max_interface_atoms
-            elif constraints_parameters['max_intreface_atoms'] in (None, 'default'):
+            elif constraints_parameters['max_interface_atoms'] in (None, 'default'):
                 self.max_interface_atoms = self.default_max_interface_atoms
             else:
                 self.max_interface_atoms = constraints_parameters['max_interface_atoms']
