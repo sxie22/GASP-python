@@ -52,6 +52,7 @@ def main():
     geometry = objects_dict['geometry']
     # create E_sub_prim and n_sub_prim
     E_sub_prim, n_sub_prim = None, None
+    lat_match_dict = None
     substrate_search = False
     if geometry.shape == 'interface':
         substrate_search = True
@@ -59,6 +60,13 @@ def main():
     if substrate_search:
         match_constraints = objects_maker.get_lat_match_params(parameters)
         E_sub_prim, n_sub_prim = objects_maker.get_prim_sub_data(parameters)
+        if E_sub_prim is None or n_sub_prim is None:
+            print ('The energy and no. of atoms of substrate calculation not '
+                    'provided.' + '\nQuitting...')
+            quit()
+        lat_match_dict = match_constraints
+        lat_match_dict['E_sub_prim'] = E_sub_prim
+        lat_match_dict['n_sub_prim'] = n_sub_prim
         # Parse the primitve substrate structure from input argument
         sub_cell = general.Cell.from_file(os.path.abspath(sys.argv[2]))
         # make it conventional_standard_structure using pymatgen to avoid issues
@@ -100,7 +108,7 @@ def main():
     os.mkdir(garun_dir + '/temp')
 
     # print the search parameters to a file in the run directory
-    parameters_printer.print_parameters(objects_dict)
+    parameters_printer.print_parameters(objects_dict, lat_match_dict=lat_match_dict)
 
     # make the data writer
     data_writer = general.DataWriter(garun_dir + '/run_data',
