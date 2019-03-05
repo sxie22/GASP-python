@@ -158,6 +158,11 @@ def main():
                                     # remove the organism from whole_pop
                                     del whole_pop[-1]
                                     continue
+                                if not developer.post_lma_develop(new_organism,
+                                 composition_space, constraints, geometry, pool):
+                                    # remove the organism from whole_pop
+                                    del whole_pop[-1]
+                                    continue
                             stopping_criteria.update_calc_counter()
                             index = len(threads)
                             thread = threading.Thread(
@@ -271,6 +276,12 @@ def main():
                                                 # remove the organism from whole_pop
                                                 del whole_pop[-1]
                                                 continue
+                                            if not developer.post_lma_develop(
+                                                 new_organism,composition_space,
+                                                   constraints, geometry, pool):
+                                                # remove the organism from whole_pop
+                                                del whole_pop[-1]
+                                                continue
                                         stopping_criteria.update_calc_counter()
                                         new_thread = threading.Thread(
                                             target=energy_calculator.do_energy_calculation,
@@ -369,6 +380,11 @@ def main():
             kwargs['E_sub_prim'] = E_sub_prim
             kwargs['n_sub_prim'] = n_sub_prim
             if unrelaxed_offspring.cell is None:
+                del whole_pop[-1]
+                continue
+            if not developer.post_lma_develop(unrelaxed_offspring, composition_space,
+                                                constraints, geometry, pool):
+                # remove the organism from whole_pop
                 del whole_pop[-1]
                 continue
         stopping_criteria.update_calc_counter()
@@ -475,6 +491,11 @@ def main():
                         kwargs['E_sub_prim'] = E_sub_prim
                         kwargs['n_sub_prim'] = n_sub_prim
                         if unrelaxed_offspring.cell is None:
+                            del whole_pop[-1]
+                            continue
+                        if not developer.post_lma_develop(unrelaxed_offspring,
+                         composition_space, constraints, geometry, pool):
+                            # remove the organism from whole_pop
                             del whole_pop[-1]
                             continue
                     stopping_criteria.update_calc_counter()
