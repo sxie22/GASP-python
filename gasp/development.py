@@ -790,11 +790,21 @@ class Developer(object):
 
         # check the lattice length and angle constraints
         # The lattice vectors often changes, hence required
-        if not self.satisfies_lattice_constraints(organism, constraints):
-            return False
+        lengths = organism.cell.lattice.abc
+        # remove lengths of lattice vector c, because cell is now vacuum padded
+        lengths = lengths[:2]
+        for length in lengths:
+            if length > constraints.max_lattice_length:
+                print('Organism {} failed max lattice length '
+                      'constraint, post LMA '.format(organism.id))
+                return False
+            elif length < constraints.min_lattice_length:
+                print('Organism {} failed min lattice length '
+                      'constraint, post LMA '.format(organism.id))
+                return False
 
         # check the per-species minimum interatomic distance constraints
-        # This does not change during LMA, but does not harm to check again
+        # This should not change during LMA, but does not harm to check again
         if not self.satisfies_mids_constraints(organism, constraints):
             return False
 
