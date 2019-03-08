@@ -539,7 +539,7 @@ def run_lat_match(substrate, twod_layer, match_constraints):
         if sd_layers == 0: # freeze all substrate atoms
             z_upper_bound = z_max + 0.01 # tolerance
         else:    # relax top layer of substrate atoms
-            z_upper_bound = np.unique(z_coords_sub)[-sd_layers]
+            z_upper_bound = np.unique(z_coords_sub)[-sd_layers] - 0.01 
 
     if hetero_interfaces:
         new_cell = hetero_interfaces[0]
