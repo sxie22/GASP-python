@@ -229,8 +229,8 @@ def get_matching_lattices(iface1, iface2, max_area=100,
     #print('initial values:\nuv1:\n{0}\nuv2:\n{1}\n '.format(ab1, ab2))
     r_list = get_r_list(area1, area2, max_area, tol=r1r2_tol)
     if not r_list:
-        print('r_list is empty. Try increasing the max surface \
-                area or/and the other tolerance paramaters')
+        print('r_list is empty. Try increasing the max surface '
+                'area or/and the other tolerance parameters')
         return None, None
         #sys.exit()
     found = []
@@ -539,7 +539,7 @@ def run_lat_match(substrate, twod_layer, match_constraints):
         if sd_layers == 0: # freeze all substrate atoms
             z_upper_bound = z_max + 0.01 # tolerance
         else:    # relax top layer of substrate atoms
-            z_upper_bound = np.unique(z_coords_sub)[-sd_layers] - 0.01 
+            z_upper_bound = np.unique(z_coords_sub)[-sd_layers] - 0.01
 
     if hetero_interfaces:
         new_cell = hetero_interfaces[0]
