@@ -222,11 +222,11 @@ class Cell(Structure):
         Takes all the attributes from Structure object and makes it into
         a Cell object.
         """
-        super(Cell, self).__init__(lattice, species, coords, charge=charge, 
-                                        validate_proximity=validate_proximity, 
+        super(Cell, self).__init__(lattice, species, coords, charge=charge,
+                                        validate_proximity=validate_proximity,
                                         to_unit_cell=to_unit_cell,
-                                        coords_are_cartesian=coords_are_cartesian, 
-                                        site_properties=site_properties)       
+                                        coords_are_cartesian=coords_are_cartesian,
+                                        site_properties=site_properties)
 
 
     def rotate_to_principal_directions(self):
@@ -950,15 +950,29 @@ class DataWriter(object):
             format_string = '{0}\t\t {1}\t {2:.6f}\t\t {3:.6f}\t\t {4}\t\t'
         else:
             format_string = '{0}\t\t {1}\t\t {2:.6f}\t\t {3:.6f}\t\t {4}\t\t'
+        if organism.n_sub is not None: # if this is a substrate search
+            format_string = '{0}\t {1}\t {2:.6f}\t {3:.6f}\t {4}\t {5}\t {6}\t {7}\t'
+            num_twod = len(organism.cell.sites)
+            ab = organism.cell.lattice.matrix[:2]
+            org_surface_area = np.linalg.norm(np.cross(ab[0], ab[1]))
+
 
         # determine what to write for the progress
         if progress is None:
             format_string = format_string + ' None\n'
-        else:
+        elif '{5}' not in format_string:
             format_string = format_string + ' {5:.6f}\n'
+        else:
+            format_string = format_string + ' {8:.6f}\n'
 
         # write the line to the file
         with open(self.file_path, 'a') as data_file:
-            data_file.write(format_string.format(
-                organism.id, formula, organism.total_energy, organism.epa,
-                num_calcs, progress))
+            if '{7}' in format_string:
+                data_file.write(format_string.format(
+                    organism.id, formula, num_twod, organism.n_sub,
+                    org_surface_area, organism.total_energy, organism.epa,
+                    num_calcs, progress))
+            else:
+                data_file.write(format_string.format(
+                    organism.id, formula, organism.total_energy, organism.epa,
+                    num_calcs, progress))
