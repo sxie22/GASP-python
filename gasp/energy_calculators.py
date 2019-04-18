@@ -187,7 +187,6 @@ class VaspEnergyCalculator(object):
             n_twod = n_iface - n_sub
             factor = n_sub/n_sub_prim
             ef_ads = enthalpy/n_twod - factor * E_sub_prim / n_twod
-            organism.total_energy = enthalpy - factor * E_sub_prim
             organism.epa = ef_ads
             print ('Setting Ef_adsorption of organism {} to {} eV/atom '.format(
                     organism.id, organism.epa))
@@ -347,7 +346,6 @@ class LammpsEnergyCalculator(object):
             n_twod = n_iface - n_sub
             factor = n_sub/n_sub_prim
             ef_ads = enthalpy / n_twod - factor * E_sub_prim / n_twod
-            organism.total_energy = enthalpy - factor * E_sub_prim
             organism.epa = ef_ads
             print ('Setting Ef_adsorption of organism {} to {} eV/atom '.format(
                     organism.id, organism.epa))
