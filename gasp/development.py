@@ -668,16 +668,24 @@ class Developer(object):
         Returns a boolean indicating whether the organism satisfies the
         constraints on the lattice vector lengths and angles.
 
+        Update: In case of substrate search, add tolerance to lattice
+        parameters accounting for possible greater relaxation
+
         Args:
             organism: the Organism to check
 
             constraints: the Constraints of the search
         """
-
+        if organism.n_sub is not None: # post energy calculation development
+            max_length = constraints.max_lattice_length + 1
+            max_angle  = constraints.max_lattice_angle + 0.2
+        else:
+            max_length = constraints.max_lattice_length
+            max_angle  = constraints.max_lattice_angle
         # check the max and min lattice length constraints
         lengths = organism.cell.lattice.abc
         for length in lengths:
-            if length > constraints.max_lattice_length:
+            if length > max_length:
                 print('Organism {} failed max lattice length '
                       'constraint '.format(organism.id))
                 return False
@@ -689,7 +697,7 @@ class Developer(object):
         # check the max and min lattice angle constraints
         angles = organism.cell.lattice.angles
         for angle in angles:
-            if angle > constraints.max_lattice_angle:
+            if angle > max_angle:
                 print('Organism {} failed max lattice angle '
                       'constraint '.format(organism.id))
                 return False
@@ -742,14 +750,21 @@ class Developer(object):
         Returns a boolean indicating whether the organism satisfies the
         constraints associated with the geometry (max and min size, etc.).
 
+        Update: For substrate search, add tolerance to max_size for post
+        relaxation development
+
         Args:
             organism: the Organism to check
 
             geometry: the Geometry of the search
         """
+        if organism.n_sub is not None: # if post energy calculation development
+            geo_max_size = geometry.max_size + 1
+        else:
+            geo_max_size = geometry.max_size
 
         # check the max size constraint (can only fail for non-bulk geometries)
-        if geometry.get_size(organism.cell) > geometry.max_size:
+        if geometry.get_size(organism.cell) > geo_max_size:
             print("Organism {} failed max size constraint ".format(
                 organism.id))
             return False
