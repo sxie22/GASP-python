@@ -95,7 +95,6 @@ class VaspEnergyCalculator(object):
         shutil.copy(self.kpoints_file, job_dir_path)
 
         # sort the organism's cell and write to POSCAR file
-        organism.cell.sort()
         if E_sub_prim is not None and n_sub_prim is not None:
             cell = organism.cell
             n_sub = organism.n_sub
