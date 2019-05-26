@@ -396,6 +396,7 @@ def generate_all_configs(substrate, mat2d,
     hetero_interfaces = []
     for coord_i in coords_uniq_sub:
         for coord_j in coords_uniq_2d:
+            # All substrate atoms are added to interface cell first
             interface = substrate.copy()
             shift_parallel = coord_i - coord_j
             shift_parallel[2] = 0
@@ -404,6 +405,9 @@ def generate_all_configs(substrate, mat2d,
                 new_coords = site.coords
                 new_coords[2] = site.coords[2] - mat_2d_bottom
                 new_coords = new_coords + origin + shift_net
+                # each atom in 2D layer is appended to the existing substrate
+                # Note: It is important to keep this order of substrate
+                # followed by interface, for geo.unpad()
                 interface.append(site.specie, new_coords,
                                  coords_are_cartesian=True)
             hetero_interfaces.append(interface)

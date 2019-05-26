@@ -26,6 +26,7 @@ from pymatgen.core.lattice import Lattice
 from pymatgen.core.sites import Site
 
 import numpy as np
+import copy
 
 
 class Bulk(object):
@@ -664,7 +665,7 @@ class Substrate_2D(object):
 
     def pad(self, cell, padding='from_geometry'):
         '''
-        Essentially same as Sheet.pad() method
+        Same as Sheet.pad() method
         Modifies a cell by adding vertical vacuum padding and making the
         c-lattice vector normal to the plane of the sheet. The atoms are
         shifted to the center of the padded sheet.
@@ -724,6 +725,7 @@ class Substrate_2D(object):
         distance is added along c-vector and makes it normal to the Sheet.
         The interface poscar must contain substrate atoms first followed by
         2D/adsorbate atoms
+        (The code is strucutred such that this is the case even in subsequent cells)
 
         Args:
             cell: the Cell object of interface structure
@@ -740,10 +742,6 @@ class Substrate_2D(object):
         bx = cell.lattice.matrix[1][0]
         by = cell.lattice.matrix[1][1]
 
-        # create lattice with 2D layer thickness
-        all_z = [i[2] for i in cartesian_coords]
-        all_z.sort()
-
         # Check if n_sub exists, else make ind_sub=0
         # This takes the entire cell thickness if ind_sub=0.
         if n_sub is None:
@@ -752,12 +750,17 @@ class Substrate_2D(object):
             ind_sub = n_sub
 
         n_twod = len(cell.sites) - ind_sub
-        # all_z[n_sub] belongs to the first twod site
-        twod_thickness = all_z[-1] - all_z[ind_sub]
+        # create lattice with 2D layer thickness
+        all_z = [i[2] for i in cartesian_coords]
+        # all twod atoms lie towards the end, so all z-coords of 2D atoms is
+        twod_z = all_z[-n_twod:]
+        # thickness of 2D film lattice
+        twod_thickness = max(twod_z) - min(twod_z)
         twod_lattice = Lattice([[ax, 0.0, 0.0], [bx, by, 0.0],
                                 [0.0, 0.0, twod_thickness + max_mid]])
-        twod_cell = cell
-        twod_cell.modify_lattice(twod_lattice)
+        # Make a copy of relaxed interface before modifying cell
+        interface_cell = copy.deepcopy(cell)
+        cell.modify_lattice(twod_lattice)
 
         # index of all the twod sites in the interface cell
         all_ind = range(len(cartesian_coords))
@@ -765,22 +768,23 @@ class Substrate_2D(object):
 
         # Add 2D atomic sites to the 2D lattice
         site_indices = []
-        for i in range(len(twod_cell.sites)):
+        for i in range(len(cell.sites)):
             site_indices.append(i)
-        twod_cell.remove_sites(site_indices)
-        cartesian_coords = sorted(cartesian_coords, key=lambda x: x[2])
+        cell.remove_sites(site_indices)
+        # Note: cartesian coords are not sorted to utilize the
+        # existing sorted structure of interface cell
         for i in twod_ind:
-            twod_cell.append(species[i], cartesian_coords[i],
+            cell.append(species[i], cartesian_coords[i],
                                 coords_are_cartesian=True)
 
         # translate the atoms back into the cell if needed, and shift them to
         # the vertical center
-        twod_cell.translate_atoms_into_cell()
-        frac_bounds = twod_cell.get_bounding_box(cart_coords=False)
+        cell.translate_atoms_into_cell()
+        frac_bounds = cell.get_bounding_box(cart_coords=False)
         z_center = frac_bounds[2][0] + (frac_bounds[2][1] - frac_bounds[2][0])/2
         translation_vector = [0, 0, 0.5 - z_center]    # making z_center as 0.5
-        site_indices = [i for i in range(len(twod_cell.sites))]
-        twod_cell.translate_sites(site_indices, translation_vector,
+        site_indices = [i for i in range(len(cell.sites))]
+        cell.translate_sites(site_indices, translation_vector,
                                   frac_coords=True, to_unit_cell=False)
 
     def get_size(self, cell):

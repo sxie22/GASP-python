@@ -118,7 +118,10 @@ class Organism(object):
         # Substrate related defaults
         # Number of atoms of the substrate in the interface
         self.n_sub = None
+        # z coordinate used for selective dynamics
         self.z_upper_bound=None
+        # Save interface cell or just 2D cell
+        self.interface_cell=None
 
 
     # This keeps the id (sort of) immutable by causing an exception to be
