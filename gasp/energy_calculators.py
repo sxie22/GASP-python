@@ -113,10 +113,14 @@ class VaspEnergyCalculator(object):
                       'energy calculation' % n_atoms)
                 return
 
+        # potcar now may contain same species more than once in the order
+        # if it exists in poscar        
         # get a list of the element symbols in the sorted order
         symbols = []
         for site in organism.cell.sites:
-            if site.specie.symbol not in symbols:
+            if len(symbols) == 0 :
+                symbols.append(site.specie.symbol)
+            elif site.specie.symbol not in symbols[-1]:
                 symbols.append(site.specie.symbol)
 
         # write the POTCAR file by concatenating the appropriate elemental
