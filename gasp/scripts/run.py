@@ -112,7 +112,7 @@ def main():
 
     # make the data writer
     data_writer = general.DataWriter(garun_dir + '/run_data',
-                                     composition_space)
+                            composition_space, sub_search=substrate_search)
 
     whole_pop = []
     num_finished_calcs = 0

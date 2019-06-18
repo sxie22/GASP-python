@@ -909,7 +909,7 @@ class DataWriter(object):
     For writing useful data to a file in the course of a search.
     """
 
-    def __init__(self, file_path, composition_space):
+    def __init__(self, file_path, composition_space, sub_search=False):
         """
         Makes a DataWriter.
 
@@ -920,14 +920,19 @@ class DataWriter(object):
         """
 
         self.file_path = file_path
+        self.sub_search = sub_search
         with open(self.file_path, 'a') as data_file:
             data_file.write('Composition space endpoints: ')
             for endpoint in composition_space.endpoints:
                 data_file.write(' {}'.format(
                     endpoint.reduced_formula.replace(' ', '')))
             data_file.write('\n\n')
-            data_file.write('id\t\t composition\t total energy\t\t '
-                            'epa\t\t\t num calcs\t best value\n\n')
+            if not sub_search:
+                data_file.write('id\t\t composition\t total energy\t\t '
+                                'epa\t\t\t num calcs\t best value\n\n')
+            else:
+                data_file.write('id\t comp\t n-2D\t n-sub\t total energy\t'
+                                '  epa\t\t num calcs\t best value\n\n')
 
     def write_data(self, organism, num_calcs, progress):
         """
@@ -953,24 +958,26 @@ class DataWriter(object):
             format_string = '{0}\t\t {1}\t {2:.6f}\t\t {3:.6f}\t\t {4}\t\t'
         else:
             format_string = '{0}\t\t {1}\t\t {2:.6f}\t\t {3:.6f}\t\t {4}\t\t'
-        if organism.n_sub is not None: # if this is a substrate search
-            format_string = '{0}\t {1}\t {2:.6f}\t {3:.6f}\t {4}\t {5}\t {6}\t {7}\t'
+        if self.sub_search: # if this is a substrate search
+            format_string = '{0}\t {1}\t {2}\t {3}\t {4:.6f}\t {5:.6f}\t '
+                            '{6:.6f}\t {7}\t\t'
             num_twod = len(organism.cell.sites)
             ab = organism.cell.lattice.matrix[:2]
             org_surface_area = np.linalg.norm(np.cross(ab[0], ab[1]))
 
 
         # determine what to write for the progress
-        if progress is None:
-            format_string = format_string + ' None\n'
-        elif '{5}' not in format_string:
-            format_string = format_string + ' {5:.6f}\n'
-        else:
+        if self.sub_search:
             format_string = format_string + ' {8:.6f}\n'
+        else:
+            if progress is None:
+                format_string = format_string + ' None\n'
+            else:
+                format_string = format_string + ' {5:.6f}\n'
 
         # write the line to the file
         with open(self.file_path, 'a') as data_file:
-            if '{7}' in format_string:
+            if self.sub_search:
                 data_file.write(format_string.format(
                     organism.id, formula, num_twod, organism.n_sub,
                     org_surface_area, organism.total_energy, organism.epa,
