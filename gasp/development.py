@@ -707,7 +707,7 @@ class Developer(object):
                 return False
         return True
 
-    def satisfies_mids_constraints(self, organism, constraints):
+    def satisfies_mids_constraints(self, organism, constraints, pre_dev=True):
         """
         Returns a boolean indicating whether the organism satisfies the
         per-species minimum interatomic distance constraints.
@@ -717,9 +717,10 @@ class Developer(object):
 
             constraints: the Constraints of the search
         """
-
-        # delete duplicate sites
-        organism.cell.merge_sites(mode='delete')
+        if pre_dev:
+            # delete duplicate sites
+            # We do not need this for post energy development
+            organism.cell.merge_sites(mode='delete')
 
         # check the per-species minimum interatomic distance constraints
         species_symbols = organism.cell.symbol_set
@@ -820,7 +821,7 @@ class Developer(object):
 
         # check the per-species minimum interatomic distance constraints
         # This should not change during LMA, but does not harm to check again
-        if not self.satisfies_mids_constraints(organism, constraints):
+        if not self.satisfies_mids_constraints(organism, constraints, pre_dev=False):
             return False
 
         return True

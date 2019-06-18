@@ -17,7 +17,6 @@ import sys
 from math import sqrt
 import numpy as np
 
-from pymatgen.core.structure import Structure
 from pymatgen.core.lattice import Lattice
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
@@ -272,11 +271,11 @@ def get_matching_lattices(iface1, iface2, max_area=100,
     if found:
         print('\nMATCH FOUND\n')
         uv_all = sorted(found, key=lambda x: x[2])  # sort all based on area
-        uv_opt = uv_all[0]				# min. area match
+        uv_opt = uv_all[0]                # min. area match
         print('Best match:\nuv1:\n{0}\nuv2:\n{1}\narea:\n{2}\n'.format(
             uv_opt[0], uv_opt[1], uv_opt[2]))
         print('Lattice mismatch[u, v & alpha]:\n{0} \%, {1} \%, \
-		{2} degrees\n'.format(uv_opt[3]*100, uv_opt[4]*100, uv_opt[5]))
+        {2} degrees\n'.format(uv_opt[3]*100, uv_opt[4]*100, uv_opt[5]))
 
         # uv_all is written to a dictionary
         matches_dict = {}
@@ -348,10 +347,8 @@ def get_uniq_layercoords(struct, nlayers, top=True):
     # coordinates of the unique atoms in the layers
     return coords[indices_uniq]
 
-
-def generate_all_configs(substrate, mat2d,
-                         nlayers_2d=2, nlayers_substrate=2,
-                         separation=5):
+def get_interface(substrate, mat2d, nlayers_2d=2, nlayers_substrate=2, 
+                                 separation=5):
     """
     For the given lattice matched 2D material and substrate structures,
     this functions computes all unique sites in the interface layers
@@ -393,25 +390,30 @@ def generate_all_configs(substrate, mat2d,
     # unique substrate and unique 2d materials site in the layers .i.e
     # an interface structure for each parallel shift
     # interface = 2D material + substrate
-    hetero_interfaces = []
-    for coord_i in coords_uniq_sub:
-        for coord_j in coords_uniq_2d:
-            # All substrate atoms are added to interface cell first
-            interface = substrate.copy()
-            shift_parallel = coord_i - coord_j
-            shift_parallel[2] = 0
-            shift_net = shift_normal - shift_parallel
-            for site in mat2d:
-                new_coords = site.coords
-                new_coords[2] = site.coords[2] - mat_2d_bottom
-                new_coords = new_coords + origin + shift_net
-                # each atom in 2D layer is appended to the existing substrate
-                # Note: It is important to keep this order of substrate
-                # followed by interface, for geo.unpad()
-                interface.append(site.specie, new_coords,
-                                 coords_are_cartesian=True)
-            hetero_interfaces.append(interface)
-    return hetero_interfaces
+    interface = substrate.copy()
+    shift_parallel = coords_uniq_sub[0] - coords_uniq_2d[0]
+    shift_parallel[2] = 0
+    shift_net = shift_normal - shift_parallel
+
+    # generate new coords for 2D material to be added to substrate
+    new_coords = []
+    inds = []
+    mat_species = []
+    for ind, site in enumerate(mat2d):
+        new_coord = site.coords
+        new_coord[2] = site.coords[2] - mat_2d_bottom
+        new_coord = new_coord + origin + shift_net    
+        new_coords.append(new_coord)
+        inds.append(ind)
+        mat_species.append(site.specie)
+
+    inds = np.array(inds) + len(substrate)    
+    # insert mat2d coords and species at the end of the interface using index
+    # Not using Structure.append method as it seems to disrupt atoms order    
+    for i, specie, coord in zip(inds, mat_species, new_coords):
+        interface.insert(i, specie, coord, coords_are_cartesian=True)
+    
+    return interface
 
 
 def get_aligned_lattices(slab_sub, slab_2d, max_area=200,
@@ -434,8 +436,8 @@ def get_aligned_lattices(slab_sub, slab_2d, max_area=200,
         return None, None
         #sys.exit()
 
-    substrate = Structure.from_sites(slab_sub)
-    mat2d = Structure.from_sites(slab_2d)
+    substrate = Cell.from_sites(slab_sub)
+    mat2d = Cell.from_sites(slab_2d)
 
     # map the intial slabs to the newly found matching lattices
     substrate_latt = Lattice(np.array(
@@ -461,7 +463,7 @@ def get_aligned_lattices(slab_sub, slab_2d, max_area=200,
                 mat2d_fake_c
             ]))
 
-	# Supercell matrix for primitive lattices -> match lattices
+    # Supercell matrix for primitive lattices -> match lattices
     _, __, scell_1 = substrate.lattice.find_mapping(substrate_latt,
                                                       ltol=0.05,
                                                       atol=max_angle_diff)
@@ -522,7 +524,13 @@ def run_lat_match(substrate, twod_layer, match_constraints):
                             max_area=max_area,
                             max_mismatch=max_mismatch,
                             max_angle_diff=max_angle_diff,
-			                r1r2_tol=r1r2_tol)
+                            r1r2_tol=r1r2_tol)
+        sub.rotate_to_principal_directions()
+        mat2d.rotate_to_principal_directions()
+        # sorts atoms wrt electronegativity
+        # use this order in POTCAR
+        sub.sort()
+        mat2d.sort()
     except:
         print ('Lattice match failed at get_aligned_lattices..')
         return None, None, None
@@ -531,11 +539,11 @@ def run_lat_match(substrate, twod_layer, match_constraints):
     hetero_interfaces = None
     if sub and mat2d:
         try:
-            hetero_interfaces = generate_all_configs(sub, mat2d,
+            hetero_interface = get_interface(sub, mat2d,
                                      nlayers_2d, nlayers_substrate,
                                      separation)
         except:
-            print('Lattice match failed at generate_all_configs..')
+            print('Lattice match failed at get_interface..')
             return None, None, None
         n_sub = sub.num_sites
         z_coords_sub = sub.frac_coords[:, 2]
@@ -545,10 +553,8 @@ def run_lat_match(substrate, twod_layer, match_constraints):
         else:    # relax top layer of substrate atoms
             z_upper_bound = np.unique(z_coords_sub)[-sd_layers] - 0.01
 
-    if hetero_interfaces:
-        new_cell = hetero_interfaces[0]
-        interface_cell = Cell(new_cell.lattice, new_cell.species,
-                              new_cell.cart_coords, coords_are_cartesian=True)
-        return  interface_cell, n_sub, z_upper_bound
+    if hetero_interface:
+        return  hetero_interface, n_sub, z_upper_bound
     else:
         return None, None, None
+
