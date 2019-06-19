@@ -959,8 +959,7 @@ class DataWriter(object):
         else:
             format_string = '{0}\t\t {1}\t\t {2:.6f}\t\t {3:.6f}\t\t {4}\t\t'
         if self.sub_search: # if this is a substrate search
-            format_string = '{0}\t {1}\t {2}\t {3}\t {4:.6f}\t {5:.6f}\t '
-                            '{6:.6f}\t {7}\t\t'
+            format_string = '{0}\t {1}\t {2}\t {3}\t {4:.6f}\t {5:.6f}\t {6:.6f}\t {7}\t\t'
             num_twod = len(organism.cell.sites)
             ab = organism.cell.lattice.matrix[:2]
             org_surface_area = np.linalg.norm(np.cross(ab[0], ab[1]))
