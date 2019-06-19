@@ -931,8 +931,8 @@ class DataWriter(object):
                 data_file.write('id\t\t composition\t total energy\t\t '
                                 'epa\t\t\t num calcs\t best value\n\n')
             else:
-                data_file.write('id\t comp\t n-2D\t n-sub\t total energy\t'
-                                '  epa\t\t num calcs\t best value\n\n')
+                data_file.write('id\t comp\t n-2D\t n-sub\t surface area\t '
+                                'total energy\t  epa\t\t num calcs\t best value\n\n')
 
     def write_data(self, organism, num_calcs, progress):
         """
