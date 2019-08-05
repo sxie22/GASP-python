@@ -103,18 +103,8 @@ class VaspEnergyCalculator(object):
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
 
-        # Check the number of atoms in poscar (n_max_poscar) for interfaces only
-        if E_sub_prim is not None and n_sub_prim is not None:
-            poscar_path = job_dir_path + '/POSCAR'
-            iface_str = Cell.from_file(poscar_path)
-            n_atoms = len(iface_str.sites)
-            if n_atoms > n_max_poscar:
-                print('The structure has %d atoms. Not submitting for '
-                      'energy calculation' % n_atoms)
-                return
-
         # potcar now may contain same species more than once in the order
-        # if it exists in poscar        
+        # if it exists in poscar
         # get a list of the element symbols in the sorted order
         symbols = []
         for site in organism.cell.sites:

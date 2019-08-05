@@ -160,6 +160,7 @@ def main():
                                             interface.run_lat_match(
                                             substrate_prim, new_organism.cell,
                                             match_constraints)
+                                geometry.pad(new_organism.cell)
                                 kwargs['E_sub_prim'] = E_sub_prim
                                 kwargs['n_sub_prim'] = n_sub_prim
                                 if new_organism.cell is None: #if LMA fail
@@ -278,6 +279,7 @@ def main():
                                                         substrate_prim,
                                                         new_organism.cell,
                                                         match_constraints)
+                                            geometry.pad(new_organism.cell)
                                             kwargs['E_sub_prim'] = E_sub_prim
                                             kwargs['n_sub_prim'] = n_sub_prim
                                             if new_organism.cell is None: #if LMA fail
@@ -385,6 +387,7 @@ def main():
             unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
             unrelaxed_offspring.z_upper_bound = interface.run_lat_match(
                     substrate_prim, unrelaxed_offspring.cell, match_constraints)
+            geometry.pad(unrelaxed_offspring.cell)
             kwargs['E_sub_prim'] = E_sub_prim
             kwargs['n_sub_prim'] = n_sub_prim
             if unrelaxed_offspring.cell is None:
@@ -496,6 +499,7 @@ def main():
                         unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
                         unrelaxed_offspring.z_upper_bound = interface.run_lat_match(
                                 substrate_prim, unrelaxed_offspring.cell, match_constraints)
+                        geometry.pad(unrelaxed_offspring.cell)
                         kwargs['E_sub_prim'] = E_sub_prim
                         kwargs['n_sub_prim'] = n_sub_prim
                         if unrelaxed_offspring.cell is None:
