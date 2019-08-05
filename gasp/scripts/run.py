@@ -160,13 +160,14 @@ def main():
                                             interface.run_lat_match(
                                             substrate_prim, new_organism.cell,
                                             match_constraints)
-                                geometry.pad(new_organism.cell)
                                 kwargs['E_sub_prim'] = E_sub_prim
                                 kwargs['n_sub_prim'] = n_sub_prim
                                 if new_organism.cell is None: #if LMA fail
                                     # remove the organism from whole_pop
                                     del whole_pop[-1]
                                     continue
+                                else:
+                                    geometry.pad(new_organism.cell)
                                 if not developer.post_lma_develop(new_organism,
                                  composition_space, constraints, geometry, pool):
                                     # remove the organism from whole_pop
@@ -279,13 +280,14 @@ def main():
                                                         substrate_prim,
                                                         new_organism.cell,
                                                         match_constraints)
-                                            geometry.pad(new_organism.cell)
                                             kwargs['E_sub_prim'] = E_sub_prim
                                             kwargs['n_sub_prim'] = n_sub_prim
                                             if new_organism.cell is None: #if LMA fail
                                                 # remove the organism from whole_pop
                                                 del whole_pop[-1]
                                                 continue
+                                            else:
+                                                geometry.pad(new_organism.cell)
                                             if not developer.post_lma_develop(
                                                  new_organism,composition_space,
                                                    constraints, geometry, pool):
@@ -387,12 +389,13 @@ def main():
             unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
             unrelaxed_offspring.z_upper_bound = interface.run_lat_match(
                     substrate_prim, unrelaxed_offspring.cell, match_constraints)
-            geometry.pad(unrelaxed_offspring.cell)
             kwargs['E_sub_prim'] = E_sub_prim
             kwargs['n_sub_prim'] = n_sub_prim
             if unrelaxed_offspring.cell is None:
                 del whole_pop[-1]
                 continue
+            else:
+                geometry.pad(unrelaxed_offspring.cell)
             if not developer.post_lma_develop(unrelaxed_offspring, composition_space,
                                                 constraints, geometry, pool):
                 # remove the organism from whole_pop
@@ -499,12 +502,13 @@ def main():
                         unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
                         unrelaxed_offspring.z_upper_bound = interface.run_lat_match(
                                 substrate_prim, unrelaxed_offspring.cell, match_constraints)
-                        geometry.pad(unrelaxed_offspring.cell)
                         kwargs['E_sub_prim'] = E_sub_prim
                         kwargs['n_sub_prim'] = n_sub_prim
                         if unrelaxed_offspring.cell is None:
                             del whole_pop[-1]
                             continue
+                        else:
+                            geometry.pad(unrelaxed_offspring.cell)
                         if not developer.post_lma_develop(unrelaxed_offspring,
                          composition_space, constraints, geometry, pool):
                             # remove the organism from whole_pop
