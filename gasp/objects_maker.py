@@ -286,7 +286,7 @@ def get_lat_match_params(parameters):
     for key, param in zip(keys, match_constraints):
         lat_match_params[key] = param
 
-    # Check if any user specied constraints are available and replace    
+    # Check if any user specied constraints are available and replace
     if 'LatticeMatch' not in parameters:
         print ('No lattice match constraints provided. Using defaults...')
     else:
@@ -296,19 +296,29 @@ def get_lat_match_params(parameters):
 
     return lat_match_params
 
-def get_prim_sub_data(parameters):
+def get_substrate_params(parameters):
     """
     Returns the total energy (enthalpy) of primitive substrate calculation
     and number of atoms in the primitive substrate cell
 
     This is mandatory and no defaults!
     """
-    if 'Substrate_prim_calc' in parameters:
-        E_sub_prim = parameters['Substrate_prim_calc']['E_sub_prim']
-        n_sub_prim = parameters['Substrate_prim_calc']['n_sub_prim']
-        return E_sub_prim, n_sub_prim
+    if 'Substrate' in parameters:
+        sub_params = parameters['Substrate']
+        # A, B, C are species in film only
+        # Atleast should provide mu_A assuming only one species
+        if 'mu_B' in sub_params:
+            mu_B = sub_params['mu_B']
+        else:
+            sub_params['mu_B'] = None
+        if 'mu_C' in sub_params:
+            mu_C = sub_params['mu_C']
+        else:
+            sub_params['mu_C'] = None
+
+        return sub_params
     else:
-        return None, None
+        return None
 
 def make_organism_creators(parameters, composition_space, constraints):
     """

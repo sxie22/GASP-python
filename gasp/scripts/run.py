@@ -50,8 +50,9 @@ def main():
     objects_dict = objects_maker.make_objects(parameters)
 
     geometry = objects_dict['geometry']
-    # create E_sub_prim and n_sub_prim
-    E_sub_prim, n_sub_prim = None, None
+    # substrate related params
+    # Everythin will be used explicitly as kwargs for energy_calculator
+    E_sub_prim, n_sub_prim, mu_A, mu_B, mu_C = None, None, None, None, None
     lat_match_dict = None
     substrate_search = False
     if geometry.shape == 'interface':
@@ -59,14 +60,14 @@ def main():
 
     if substrate_search:
         match_constraints = objects_maker.get_lat_match_params(parameters)
-        E_sub_prim, n_sub_prim = objects_maker.get_prim_sub_data(parameters)
+        substrate_params = objects_maker.get_substrate_params(parameters)
         if E_sub_prim is None or n_sub_prim is None:
             print ('The energy and no. of atoms of substrate calculation not '
                     'provided.' + '\nQuitting...')
             quit()
         lat_match_dict = match_constraints
-        lat_match_dict['E_sub_prim'] = E_sub_prim
-        lat_match_dict['n_sub_prim'] = n_sub_prim
+        lat_match_dict['E_sub_prim'] = substrate_params['E_sub_prim']
+        lat_match_dict['n_sub_prim'] = substrate_params['n_sub_prim']
         # Parse the primitve substrate structure from input argument
         sub_cell = general.Cell.from_file(os.path.abspath(sys.argv[2]))
         # make it conventional_standard_structure using pymatgen to avoid issues
@@ -152,7 +153,8 @@ def main():
                             whole_pop.append(copy.deepcopy(new_organism))
                             # pad with vacuum
                             geometry.pad(new_organism.cell)
-                            kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
+                            kwargs = {'E_sub_prim': None, 'n_sub_prim': None,
+                                      'mu_A': None, 'mu_B': None, 'mu_C': None}
                             if substrate_search:
                                 # lattice match substrate
                                 new_organism.cell, new_organism.n_sub, \
@@ -160,8 +162,7 @@ def main():
                                             interface.run_lat_match(
                                             substrate_prim, new_organism.cell,
                                             match_constraints)
-                                kwargs['E_sub_prim'] = E_sub_prim
-                                kwargs['n_sub_prim'] = n_sub_prim
+                                kwargs = substrate_params
                                 if new_organism.cell is None: #if LMA fail
                                     # remove the organism from whole_pop
                                     del whole_pop[-1]
@@ -280,8 +281,7 @@ def main():
                                                         substrate_prim,
                                                         new_organism.cell,
                                                         match_constraints)
-                                            kwargs['E_sub_prim'] = E_sub_prim
-                                            kwargs['n_sub_prim'] = n_sub_prim
+                                            kwargs = substrate_params
                                             if new_organism.cell is None: #if LMA fail
                                                 # remove the organism from whole_pop
                                                 del whole_pop[-1]
@@ -383,14 +383,14 @@ def main():
             developer, redundancy_guard, composition_space, constraints)
         whole_pop.append(copy.deepcopy(unrelaxed_offspring))
         geometry.pad(unrelaxed_offspring.cell)
-        kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
+        kwargs = {'E_sub_prim': None, 'n_sub_prim': None,
+                        'mu_A': None, 'mu_B': None, 'mu_C': None}
         if substrate_search:
             geometry.pad(unrelaxed_offspring.cell)
             unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
             unrelaxed_offspring.z_upper_bound = interface.run_lat_match(
                     substrate_prim, unrelaxed_offspring.cell, match_constraints)
-            kwargs['E_sub_prim'] = E_sub_prim
-            kwargs['n_sub_prim'] = n_sub_prim
+            kwargs = substrate_params
             if unrelaxed_offspring.cell is None:
                 del whole_pop[-1]
                 continue
@@ -496,14 +496,14 @@ def main():
                             composition_space, constraints)
                     whole_pop.append(copy.deepcopy(unrelaxed_offspring))
                     geometry.pad(unrelaxed_offspring.cell)
-                    kwargs = {'E_sub_prim': None, 'n_sub_prim': None}
+                    kwargs = {'E_sub_prim': None, 'n_sub_prim': None,
+                                'mu_A': None, 'mu_B': None, 'mu_C': None}
 
                     if substrate_search:
                         unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
                         unrelaxed_offspring.z_upper_bound = interface.run_lat_match(
                                 substrate_prim, unrelaxed_offspring.cell, match_constraints)
-                        kwargs['E_sub_prim'] = E_sub_prim
-                        kwargs['n_sub_prim'] = n_sub_prim
+                        kwargs = substrate_params
                         if unrelaxed_offspring.cell is None:
                             del whole_pop[-1]
                             continue

@@ -64,7 +64,8 @@ class VaspEnergyCalculator(object):
         self.potcar_files = potcar_files
 
     def do_energy_calculation(self, organism, dictionary, key,
-                        composition_space, E_sub_prim=None, n_sub_prim=None):
+                              composition_space, E_sub_prim=None,
+                              n_sub_prim=None, mu_A=None, mu_B=None, mu_C=None):
         """
         Calculates the energy of an organism using VASP, and stores the relaxed
         organism in the provided dictionary at the provided key. If the
@@ -169,20 +170,52 @@ class VaspEnergyCalculator(object):
         # old n_sub, z_upper_bound and others are still carried
         organism.cell = relaxed_cell
         organism.total_energy = enthalpy
-        organism.epa = enthalpy/organism.cell.num_sites
-        print('Setting energy (epa) of organism {} to {} '
-              'eV/atom '.format(organism.id, organism.epa))
 
-        # If substrate search, obtain obj fn ef_ads
-        if E_sub_prim is not None and n_sub_prim is not None:
+
+        # If substrate search,
+        # objective function based on chemical potentials species in 2D film
+        if all([E_sub_prim, n_sub_prim]):
             n_iface = relaxed_cell.num_sites
             n_sub = organism.n_sub
-            n_twod = n_iface - n_sub
             factor = n_sub/n_sub_prim
-            ef_ads = enthalpy/n_twod - factor * E_sub_prim / n_twod
-            organism.epa = ef_ads
-            print ('Replacing epa of the organism {} with Ef_adsorption, '
-                    '{} eV/atom '.format(organism.id, organism.epa))
+            cell_area = relaxed_cell.surface_area()
+
+            # Species at each site in twod film
+            twod_species = relaxed_cell.species[-(n_iface - n_sub):]
+            uniq_twod_species = list(set(twod_species))
+            # Sort the species based on their atomic number
+            # NOTE: Specify species A, B, C always in increasing atomic number
+            sorted_twod_species = sorted(uniq_twod_species,
+                                         key=lambda x: x.number)
+            # Assign A, B, C in this order for twod species
+            # Count the num of each species
+            specie_A = sorted_twod_species[0]
+            num_A = twod_species.count(specie_A)
+            ref_en_A = num_A * mu_A
+            # set num B and num C to zero to satisy ef equation
+            num_B, num_C = 0, 0
+            if len(sorted_twod_species) > 1:
+                specie_B = sorted_twod_species[1]
+                num_B = twod_species.count(specie_B)
+                ref_en_B = num_B * mu_B
+            if len(sorted_twod_species) > 2:
+                specie_C = sorted_twod_species[2]
+                num_C = twod_species.count(specie_C)
+                ref_en_C = num_C * mu_C
+
+            ef = (enthalpy - factor * E_sub_prim - ref_en_A - ref_en_B \
+                                            - ref_en_C) / cell_area
+            # Set the formation energy from chemical potentials as epa
+            # NOTE: This tricks the algorithm to calculate fitness based on
+            # ef values
+            organism.epa = ef
+            print ('Setting epa of the organism {} with 2D film formation '
+                   'energy, {} eV/A^2 '.format(organism.id, organism.epa))
+
+        else:
+            organism.epa = enthalpy/organism.cell.num_sites
+            print('Setting energy (epa) of organism {} to {} '
+                  'eV/atom '.format(organism.id, organism.epa))
 
         dictionary[key] = organism
 
@@ -229,7 +262,8 @@ class LammpsEnergyCalculator(object):
         self.input_script = input_script
 
     def do_energy_calculation(self, organism, dictionary, key,
-                        composition_space, E_sub_prim=None, n_sub_prim=None):
+                              composition_space, E_sub_prim=None,
+                              n_sub_prim=None, mu_A=None, mu_B=None, mu_C=None):
         """
         Calculates the energy of an organism using LAMMPS, and stores the
         relaxed organism in the provided dictionary at the provided key. If the
@@ -336,12 +370,42 @@ class LammpsEnergyCalculator(object):
         if E_sub_prim is not None and n_sub_prim is not None:
             n_iface = relaxed_cell.num_sites
             n_sub = organism.n_sub
-            n_twod = n_iface - n_sub
             factor = n_sub/n_sub_prim
-            ef_ads = enthalpy / n_twod - factor * E_sub_prim / n_twod
-            organism.epa = ef_ads
-            print ('Setting Ef_adsorption of organism {} to {} eV/atom '.format(
-                    organism.id, organism.epa))
+            cell_area = relaxed_cell.surface_area()
+
+            # Species at each site in twod film
+            twod_species = relaxed_cell.species[-(n_iface - n_sub):]
+            uniq_twod_species = list(set(twod_species))
+            # Sort the species based on their atomic number
+            # NOTE: Specify species A, B, C always in increasing atomic number
+            sorted_twod_species = sorted(uniq_twod_species,
+                                         key=lambda x: x.number)
+            # Assign A, B, C in this order for twod species
+            # Count the num of each species
+            specie_A = sorted_twod_species[0]
+            num_A = twod_species.count(specie_A)
+            ref_en_A = num_A * mu_A
+            # set num B and num C to zero to satisy ef equation
+            num_B, num_C = 0, 0
+            if len(sorted_twod_species) > 1:
+                specie_B = sorted_twod_species[1]
+                num_B = twod_species.count(specie_B)
+                ref_en_B = num_B * mu_B
+            if len(sorted_twod_species) > 2:
+                specie_C = sorted_twod_species[2]
+                num_C = twod_species.count(specie_C)
+                ref_en_C = num_C * mu_C
+
+            ef = (enthalpy - factor * E_sub_prim - ref_en_A - ref_en_B \
+                                            - ref_en_C) / cell_area
+
+            # Set the formation energy from chemical potentials as epa
+            # NOTE: This tricks the algorithm to calculate fitness based on
+            # ef values
+            organism.epa = ef
+            print ('Setting epa of the organism {} with 2D film formation '
+                   'energy, {} eV/A^2 '.format(organism.id, organism.epa))
+
         else:
             print('Setting energy of organism {} to {} eV/atom '.format(
                         organism.id, organism.epa))
