@@ -63,8 +63,8 @@ class VaspEnergyCalculator(object):
         self.kpoints_file = kpoints_file
         self.potcar_files = potcar_files
 
-    def do_energy_calculation(self, organism, dictionary, key, composition_space,
-                       n_max_poscar=50, E_sub_prim=None, n_sub_prim=None):
+    def do_energy_calculation(self, organism, dictionary, key,
+                        composition_space, E_sub_prim=None, n_sub_prim=None):
         """
         Calculates the energy of an organism using VASP, and stores the relaxed
         organism in the provided dictionary at the provided key. If the
@@ -170,7 +170,7 @@ class VaspEnergyCalculator(object):
         organism.cell = relaxed_cell
         organism.total_energy = enthalpy
         organism.epa = enthalpy/organism.cell.num_sites
-        print('Setting energy of organism {} to {} '
+        print('Setting energy (epa) of organism {} to {} '
               'eV/atom '.format(organism.id, organism.epa))
 
         # If substrate search, obtain obj fn ef_ads
@@ -181,8 +181,8 @@ class VaspEnergyCalculator(object):
             factor = n_sub/n_sub_prim
             ef_ads = enthalpy/n_twod - factor * E_sub_prim / n_twod
             organism.epa = ef_ads
-            print ('Setting Ef_adsorption of organism {} to {} eV/atom '.format(
-                    organism.id, organism.epa))
+            print ('Replacing epa of the organism {} with Ef_adsorption, '
+                    '{} eV/atom '.format(organism.id, organism.epa))
 
         dictionary[key] = organism
 
