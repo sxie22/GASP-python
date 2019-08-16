@@ -343,7 +343,8 @@ class Developer(object):
         '''
 
         # check the constraints on the number of atoms
-        if not self.satisfies_num_atoms_constraints(organism, constraints):
+        if not self.satisfies_num_atoms_constraints(organism, geometry,
+                                                    constraints):
             return False
 
         # check if the organism is is the composition space
@@ -376,7 +377,7 @@ class Developer(object):
 
         return True
 
-    def satisfies_num_atoms_constraints(self, organism, constraints):
+    def satisfies_num_atoms_constraints(self, organism, geometry, constraints):
         """
         Returns a boolean indicating whether the organism satisfies the
         constraints on the number of atoms.
@@ -384,8 +385,15 @@ class Developer(object):
         Args:
             organism: the Organism to check
 
+            geometry: the Geometry of the search
+
             constraints: the Constraints of the search
         """
+        # For substrate search, 1 atom 2D films are necessary.
+        if geometry.shape == 'interface':
+            min_num_atoms = 1
+        else:
+            min_num_atoms = constraints.min_num_atoms
 
         # check max num atoms constraint
         if len(organism.cell.sites) > constraints.max_num_atoms:
@@ -394,7 +402,7 @@ class Developer(object):
             return False
 
         # check min num atoms constraint
-        if len(organism.cell.sites) < constraints.min_num_atoms:
+        if len(organism.cell.sites) < min_num_atoms:
             print("Organism {} failed min number of atoms constraint ".format(
                 organism.id))
             return False
