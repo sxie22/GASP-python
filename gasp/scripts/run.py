@@ -61,9 +61,11 @@ def main():
     if substrate_search:
         match_constraints = objects_maker.get_lat_match_params(parameters)
         substrate_params = objects_maker.get_substrate_params(parameters)
-        if E_sub_prim is None or n_sub_prim is None:
-            print ('The energy and no. of atoms of substrate calculation not '
-                    'provided.' + '\nQuitting...')
+        main_keys = ['E_sub_prim', 'n_sub_prim', 'mu_A']
+        for key in main_keys:
+            if substrate_params[key] is None:
+            print ('{} in substrate calculation not provided.'.format(key))
+            print ('Quitting...')
             quit()
         lat_match_dict = match_constraints
         lat_match_dict['E_sub_prim'] = substrate_params['E_sub_prim']
