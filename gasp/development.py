@@ -725,7 +725,7 @@ class Developer(object):
 
             constraints: the Constraints of the search
         """
-        if pre_dev:
+        if pre_dev and organism.cell.num_sites > 1:
             # delete duplicate sites
             # We do not need this for post energy development
             organism.cell.merge_sites(mode='delete')
