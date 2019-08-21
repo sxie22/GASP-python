@@ -192,11 +192,8 @@ class VaspEnergyCalculator(object):
             specie_A = sorted_twod_species[0]
             num_A = twod_species.count(specie_A)
             ref_en_A = num_A * mu_A
-            if mu_B is None:
-                ref_en_B = 0
-            if mu_C is None:
-                ref_en_C = 0
             # set num B and num C to zero to satisy ef equation
+            ref_en_B, ref_en_C = 0, 0
             num_B, num_C = 0, 0
             if len(sorted_twod_species) > 1:
                 specie_B = sorted_twod_species[1]
@@ -389,11 +386,9 @@ class LammpsEnergyCalculator(object):
             specie_A = sorted_twod_species[0]
             num_A = twod_species.count(specie_A)
             ref_en_A = num_A * mu_A
-            if mu_B is None:
-                ref_en_B = 0
-            if mu_C is None:
-                ref_en_C = 0                
+
             # set num B and num C to zero to satisy ef equation
+            ref_en_B, ref_en_C = 0, 0
             num_B, num_C = 0, 0
             if len(sorted_twod_species) > 1:
                 specie_B = sorted_twod_species[1]
