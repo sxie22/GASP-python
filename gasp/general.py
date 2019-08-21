@@ -951,7 +951,10 @@ class DataWriter(object):
                 of the convex hull, or None if no convex hull could be
                 constructed.
         """
-
+        # if progress is None due to some error in get_convex_hull_area
+        if progress is None:
+            progress = 0.0
+            
         # determine how many tabs to use after the composition
         formula = organism.composition.formula.replace(' ', '')
         if len(formula) > 8:
