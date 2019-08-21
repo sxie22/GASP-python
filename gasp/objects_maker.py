@@ -76,9 +76,12 @@ def make_objects(parameters):
     objects_dict['composition_space'] = composition_space
 
     # make the constraints object
+    cons_min_num = 2
+    if substrate_search:
+        cons_min_num = 1    
     if 'Constraints' in parameters:
         if 'min_num_atoms' in parameters['Constraints']:
-            if parameters['Constraints']['min_num_atoms'] < 2:
+            if parameters['Constraints']['min_num_atoms'] < cons_min_num:
                 print('The value passed to the "min_num_atoms" keyword in the '
                       'Constraints block must greater than or equal to 2.')
                 print('Quitting...')
