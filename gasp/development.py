@@ -853,7 +853,7 @@ class Developer(object):
         if twod_atoms > constraints.max_num_atoms:
             print ('Organism {} failed max_num_atoms post LMA'.format(
                                                                 organism.id))
-
+            return False                                                    
         # check max interface atoms constraint
         if organism.cell.num_sites > constraints.max_interface_atoms:
             print("Organism {} failed max interface atoms constraint ".format(
