@@ -348,7 +348,8 @@ class Developer(object):
             return False
 
         # check if the organism is is the composition space
-        if not self.is_in_composition_space(organism, composition_space,
+        if not self.is_in_composition_space(organism, geometry,
+                                            composition_space,
                                             constraints, pool):
             return False
 
@@ -408,7 +409,7 @@ class Developer(object):
             return False
         return True
 
-    def is_in_composition_space(self, organism, composition_space,
+    def is_in_composition_space(self, organism, geometry, composition_space,
                                 constraints, pool):
         """
         Returns a boolean indicating whether the organism is in the composition
@@ -422,16 +423,18 @@ class Developer(object):
             constraints: the Constraints of the search
 
             pool: the Pool
-        """
 
+        EDIT: uses number of endpoints instead of objective function
+        """
         # for epa searches
-        if composition_space.objective_function == 'epa':
+        if len(composition_space.endpoints) == 1:
             return self.is_in_composition_space_epa(organism,
                                                     composition_space)
         # for pd searches
-        elif composition_space.objective_function == 'pd':
+        elif len(composition_space.endpoints) > 1:
             return self.is_in_composition_space_pd(organism, composition_space,
                                                    constraints, pool)
+
 
     def is_in_composition_space_epa(self, organism, composition_space):
         """
