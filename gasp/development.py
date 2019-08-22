@@ -788,8 +788,8 @@ class Developer(object):
             return False
         return True
 
-    def post_lma_develop(self, organism, composition_space, constraints, geometry,
-                pool):
+    def post_lma_develop(self, organism, composition_space, constraints,
+                                                            geometry, pool):
         '''
         In case of substrate GA, the lattice vecotrs and number of atoms in the
         organism change post lattice match.
@@ -847,9 +847,15 @@ class Developer(object):
 
             constraints: the Constraints of the search
         """
+        # n_sub is attributed post LMA
+        sub_atoms = organism.n_sub
+        twod_atoms = organism.cell.num_sites - sub_atoms
+        if twod_atoms > constraints.max_num_atoms:
+            print ('Organism {} failed max_num_atoms post LMA'.format(
+                                                                organism.id))
 
-        # check max num atoms constraint
-        if len(organism.cell.sites) > constraints.max_interface_atoms:
+        # check max interface atoms constraint
+        if organism.cell.num_sites > constraints.max_interface_atoms:
             print("Organism {} failed max interface atoms constraint ".format(
                 organism.id))
             return False
