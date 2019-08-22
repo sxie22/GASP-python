@@ -657,15 +657,28 @@ class CompositionSpace(object):
 
         For substrate search, epa is the energy of formation of adsorption
         on substrate.
+
+        EDIT: In substrate search, the formationn energy calculated using
+        chemical potentials needs to be used in place of 'epa'. Also, for a
+        composition range (2 or more endpoints), 'pd' cannot be used. Because
+        the total energy also includes substrate energy, while composiiton is
+        that of only 2D system.
+
+        So, eliminating 'pd' completely for substrate search while using
+        chemical potentials.
+
+        TODO: Include total_adsorption_energy and formation_energy as attributes
+        which activate during substrate search. Depending on the type of
+        energy chosen, use 'pd' or 'epa' type objective_function respectively.
         """
 
-        if len(self.endpoints) == 1:
-            return 'epa'
-        else:
-            for point in self.endpoints:
-                for next_point in self.endpoints:
-                    if not point.almost_equals(next_point, 0.0, 0.0):
-                        return 'pd'
+        # if len(self.endpoints) == 1:
+        #    return 'epa'
+        # else:
+        #    for point in self.endpoints:
+        #        for next_point in self.endpoints:
+        #            if not point.almost_equals(next_point, 0.0, 0.0):
+        #                return 'pd'
         return 'epa'
 
     def get_center(self):
@@ -954,7 +967,7 @@ class DataWriter(object):
         # if progress is None due to some error in get_convex_hull_area
         if progress is None:
             progress = 0.0
-            
+
         # determine how many tabs to use after the composition
         formula = organism.composition.formula.replace(' ', '')
         if len(formula) > 8:

@@ -209,6 +209,11 @@ class VaspEnergyCalculator(object):
             # Set the formation energy from chemical potentials as epa
             # NOTE: This tricks the algorithm to calculate fitness based on
             # ef values
+            organism.total_energy = enthalpy - factor * E_sub_prim
+            print ('Setting total_energy of the organism {} with '
+                   'total_adsorption_energy of the 2D film, {} eV'.format(
+                   organism.id, organism.total_energy
+                   ))
             organism.epa = ef
             print ('Setting epa of the organism {} with 2D film formation '
                    'energy, {} eV/A^2 '.format(organism.id, organism.epa))
@@ -405,6 +410,11 @@ class LammpsEnergyCalculator(object):
             # Set the formation energy from chemical potentials as epa
             # NOTE: This tricks the algorithm to calculate fitness based on
             # ef values
+            organism.total_energy = enthalpy - factor * E_sub_prim
+            print ('Setting total_energy of the organism {} with '
+                   'total_adsorption_energy of the 2D film, {} eV'.format(
+                   organism.id, organism.total_energy
+                   ))            
             organism.epa = ef
             print ('Setting epa of the organism {} with 2D film formation '
                    'energy, {} eV/A^2 '.format(organism.id, organism.epa))
