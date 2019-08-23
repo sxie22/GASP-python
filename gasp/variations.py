@@ -965,14 +965,14 @@ class NumAtomsMut(object):
 
         # add or remove atoms
         # if fixed composition search
-        if composition_space.objective_function == 'epa':
+        if len(composition_space.endpoints) == 1:
             if num_adds > 0:
                 self.add_atoms_epa(cell, num_adds, random)
             elif num_adds < 0:
                 self.remove_atoms_epa(cell, -1*num_adds, random)
 
         # if phase diagram search
-        elif composition_space.objective_function == 'pd':
+        elif len(composition_space.endpoints) > 1:
             if num_adds > 0:
                 self.add_atoms_pd(cell, num_adds, composition_space, random)
             elif num_adds < 0:
@@ -1013,9 +1013,9 @@ class NumAtomsMut(object):
                                           self.sigma_num_adds)))
         # keep trying until we get a valid number
         while num_adds == 0 or \
-            (composition_space.objective_function == 'epa' and num_adds*-1 >=
+            (len(composition_space.endpoints) == 1 and num_adds*-1 >=
              cell.num_sites/composition_space.endpoints[0].num_atoms) or \
-            (composition_space.objective_function == 'pd' and
+            (len(composition_space.endpoints) > 1 and
                 num_adds*-1 >= cell.num_sites):
             num_adds = int(round(random.gauss(self.mu_num_adds,
                                               self.sigma_num_adds)))
