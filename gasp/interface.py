@@ -347,7 +347,7 @@ def get_uniq_layercoords(struct, nlayers, top=True):
     # coordinates of the unique atoms in the layers
     return coords[indices_uniq]
 
-def get_interface(substrate, mat2d, nlayers_2d=2, nlayers_substrate=2, 
+def get_interface(substrate, mat2d, nlayers_2d=2, nlayers_substrate=2,
                                  separation=5):
     """
     For the given lattice matched 2D material and substrate structures,
@@ -402,17 +402,17 @@ def get_interface(substrate, mat2d, nlayers_2d=2, nlayers_substrate=2,
     for ind, site in enumerate(mat2d):
         new_coord = site.coords
         new_coord[2] = site.coords[2] - mat_2d_bottom
-        new_coord = new_coord + origin + shift_net    
+        new_coord = new_coord + origin + shift_net
         new_coords.append(new_coord)
         inds.append(ind)
         mat_species.append(site.specie)
 
-    inds = np.array(inds) + len(substrate)    
+    inds = np.array(inds) + len(substrate)
     # insert mat2d coords and species at the end of the interface using index
-    # Not using Structure.append method as it seems to disrupt atoms order    
+    # Not using Structure.append method as it seems to disrupt atoms order
     for i, specie, coord in zip(inds, mat_species, new_coords):
         interface.insert(i, specie, coord, coords_are_cartesian=True)
-    
+
     return interface
 
 
@@ -515,6 +515,8 @@ def run_lat_match(substrate, twod_layer, match_constraints):
 
     twod_prim = twod_layer.get_primitive_structure()
     substrate_prim = substrate.get_primitive_structure()
+    n_prim_sub = substrate_prim.num_sites
+    print (n_prim_sub)
 
     try:
         #get aligned lattices
@@ -531,6 +533,10 @@ def run_lat_match(substrate, twod_layer, match_constraints):
         # use this order in POTCAR
         sub.sort()
         mat2d.sort()
+        n_aligned_sub = sub.num_sites
+        print (n_aligned_sub)
+        scell_size = n_aligned_sub / n_prim_sub
+        print (scell_size)
     except:
         print ('Lattice match failed at get_aligned_lattices..')
         return None, None, None
@@ -545,16 +551,15 @@ def run_lat_match(substrate, twod_layer, match_constraints):
         except:
             print('Lattice match failed at get_interface..')
             return None, None, None
-        n_sub = sub.num_sites
+
         z_coords_sub = sub.frac_coords[:, 2]
-        z_max = np.unique(z_coords_sub)[-1]
+        z_unique, z_inds = np.unique(z_coords_sub, return_index=True)
         if sd_layers == 0: # freeze all substrate atoms
-            z_upper_bound = z_max + 0.01 # tolerance
+            sd_index = n_aligned_sub - 1
         else:    # relax top layer of substrate atoms
-            z_upper_bound = np.unique(z_coords_sub)[-sd_layers] - 0.01
+            sd_index = z_inds[len(z_inds)-sd_layers] - 1
 
     if hetero_interface:
-        return  hetero_interface, n_sub, z_upper_bound
+        return  hetero_interface, n_sub, sd_index
     else:
         return None, None, None
-

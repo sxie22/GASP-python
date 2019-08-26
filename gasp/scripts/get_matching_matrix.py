@@ -34,10 +34,11 @@ match_constraints = {'max_area':90, 'max_mismatch':0.06, 'max_angle_diff':2,
 # Check if LMA is working for existing twod structure
 iface, n_sub, z_ub = interface.run_lat_match(sub, twod, match_constraints)
 
+stretch, squeeze= False, False
 if iface is None:
     stretch, squeeze = True, True
 else:
-    print ('Current twod lattice matches with substrate. No changes needed!')    
+    print ('Current twod lattice matches with substrate. No changes needed!')
 
 # Stretch and squeeze the lattice of twod film until we find a lattice match
 for n in range(20): # 20 % stretch or squeeze being tested

@@ -100,7 +100,7 @@ class VaspEnergyCalculator(object):
             cell = organism.cell
             n_sub = organism.n_sub
             z_upper_bound = organism.z_upper_bound
-            self.write_poscar(cell, n_sub, z_upper_bound, job_dir_path)
+            self.write_poscar(cell, n_sub, sd_index, job_dir_path)
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
 
@@ -226,7 +226,7 @@ class VaspEnergyCalculator(object):
         dictionary[key] = organism
 
 
-    def write_poscar(self, iface, n_sub, z_upper_bound, job_dir_path):
+    def write_poscar(self, iface, n_sub, sd_index, job_dir_path):
         '''
         Returns POSCAR of the interface with sd flags and comment line
 
@@ -235,9 +235,12 @@ class VaspEnergyCalculator(object):
         n_twod = n_iface - n_sub
         comment = 'N_sub %d    N_twod %d' % (n_sub, n_twod)
 
-        sd_flags = np.zeros_like(iface.frac_coords)
-        z_coords_iface = iface.frac_coords[:, 2]
-        sd_flags[np.where(z_coords_iface >= z_upper_bound)] = np.ones((1, 3))
+        sd_frozen = np.zeros((sd_index + 1, 3))
+        sd_relax = np.ones((n_iface - sd_index -1, 3))
+        sd_flags = np.concatenate((sd_frozen, sd_relax))
+        #sd_flags = np.zeros_like(iface.frac_coords)
+        #z_coords_iface = iface.frac_coords[:, 2]
+        #sd_flags[np.where(z_coords_iface >= z_upper_bound)] = np.ones((1, 3))
         new_sd = []
         for i in sd_flags:
             new_sd.append([bool(x) for x in i])
@@ -309,7 +312,7 @@ class LammpsEnergyCalculator(object):
             cell = organism.cell
             n_sub = organism.n_sub
             z_upper_bound = organism.z_upper_bound
-            self.write_poscar(cell, n_sub, z_upper_bound, job_dir_path)
+            self.write_poscar(cell, n_sub, sd_index, job_dir_path)
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR.' +
                          str(organism.id) + '_unrelaxed')
@@ -414,7 +417,7 @@ class LammpsEnergyCalculator(object):
             print ('Setting total_energy of the organism {} with '
                    'total_adsorption_energy of the 2D film, {} eV'.format(
                    organism.id, organism.total_energy
-                   ))            
+                   ))
             organism.epa = ef
             print ('Setting epa of the organism {} with 2D film formation '
                    'energy, {} eV/A^2 '.format(organism.id, organism.epa))
@@ -636,7 +639,7 @@ class LammpsEnergyCalculator(object):
                 energy = float(lines[i + 2].split()[4])
         return energy
 
-    def write_poscar(self, iface, n_sub, z_upper_bound, job_dir_path):
+    def write_poscar(self, iface, n_sub, sd_index, job_dir_path):
         '''
         Returns POSCAR of the interface with sd flags and comment line
 
@@ -645,9 +648,12 @@ class LammpsEnergyCalculator(object):
         n_twod = n_iface - n_sub
         comment = 'N_sub %d    N_twod %d' % (n_sub, n_twod)
 
-        sd_flags = np.zeros_like(iface.frac_coords)
-        z_coords_iface = iface.frac_coords[:, 2]
-        sd_flags[np.where(z_coords_iface >= z_upper_bound)] = np.ones((1, 3))
+        sd_frozen = np.zeros((sd_index + 1, 3))
+        sd_relax = np.ones((n_iface - sd_index -1, 3))
+        sd_flags = np.concatenate((sd_frozen, sd_relax))
+        #sd_flags = np.zeros_like(iface.frac_coords)
+        #z_coords_iface = iface.frac_coords[:, 2]
+        #sd_flags[np.where(z_coords_iface >= z_upper_bound)] = np.ones((1, 3))
         new_sd = []
         for i in sd_flags:
             new_sd.append([bool(x) for x in i])

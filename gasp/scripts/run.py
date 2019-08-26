@@ -160,7 +160,7 @@ def main():
                             if substrate_search:
                                 # lattice match substrate
                                 new_organism.cell, new_organism.n_sub, \
-                                            new_organism.z_upper_bound = \
+                                            new_organism.sd_index = \
                                             interface.run_lat_match(
                                             substrate_prim, new_organism.cell,
                                             match_constraints)
@@ -278,7 +278,7 @@ def main():
                                             # lattice match substrate
                                             new_organism.cell, \
                                             new_organism.n_sub, \
-                                            new_organism.z_upper_bound = \
+                                            new_organism.sd_index = \
                                                         interface.run_lat_match(
                                                         substrate_prim,
                                                         new_organism.cell,
@@ -390,7 +390,7 @@ def main():
         if substrate_search:
             geometry.pad(unrelaxed_offspring.cell)
             unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
-            unrelaxed_offspring.z_upper_bound = interface.run_lat_match(
+            unrelaxed_offspring.sd_index = interface.run_lat_match(
                     substrate_prim, unrelaxed_offspring.cell, match_constraints)
             kwargs = substrate_params
             if unrelaxed_offspring.cell is None:
@@ -503,7 +503,7 @@ def main():
 
                     if substrate_search:
                         unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
-                        unrelaxed_offspring.z_upper_bound = interface.run_lat_match(
+                        unrelaxed_offspring.sd_index = interface.run_lat_match(
                                 substrate_prim, unrelaxed_offspring.cell, match_constraints)
                         kwargs = substrate_params
                         if unrelaxed_offspring.cell is None:
