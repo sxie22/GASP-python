@@ -99,7 +99,7 @@ class VaspEnergyCalculator(object):
         if E_sub_prim is not None and n_sub_prim is not None:
             cell = organism.cell
             n_sub = organism.n_sub
-            z_upper_bound = organism.z_upper_bound
+            sd_index = organism.sd_index
             self.write_poscar(cell, n_sub, sd_index, job_dir_path)
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
@@ -167,7 +167,7 @@ class VaspEnergyCalculator(object):
         enthalpy = u + pv
 
         # new relaxed_cell, total_energy, epa, ef_ads are attributed
-        # old n_sub, z_upper_bound and others are still carried
+        # old n_sub, sd_index and others are still carried
         organism.cell = relaxed_cell
         organism.total_energy = enthalpy
 
@@ -240,7 +240,7 @@ class VaspEnergyCalculator(object):
         sd_flags = np.concatenate((sd_frozen, sd_relax))
         #sd_flags = np.zeros_like(iface.frac_coords)
         #z_coords_iface = iface.frac_coords[:, 2]
-        #sd_flags[np.where(z_coords_iface >= z_upper_bound)] = np.ones((1, 3))
+        #sd_flags[np.where(z_coords_iface >= sd_index)] = np.ones((1, 3))
         new_sd = []
         for i in sd_flags:
             new_sd.append([bool(x) for x in i])
@@ -311,7 +311,7 @@ class LammpsEnergyCalculator(object):
         if E_sub_prim is not None and n_sub_prim is not None:
             cell = organism.cell
             n_sub = organism.n_sub
-            z_upper_bound = organism.z_upper_bound
+            sd_index = organism.sd_index
             self.write_poscar(cell, n_sub, sd_index, job_dir_path)
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR.' +
@@ -653,7 +653,7 @@ class LammpsEnergyCalculator(object):
         sd_flags = np.concatenate((sd_frozen, sd_relax))
         #sd_flags = np.zeros_like(iface.frac_coords)
         #z_coords_iface = iface.frac_coords[:, 2]
-        #sd_flags[np.where(z_coords_iface >= z_upper_bound)] = np.ones((1, 3))
+        #sd_flags[np.where(z_coords_iface >= sd_index)] = np.ones((1, 3))
         new_sd = []
         for i in sd_flags:
             new_sd.append([bool(x) for x in i])
