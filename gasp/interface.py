@@ -516,7 +516,6 @@ def run_lat_match(substrate, twod_layer, match_constraints):
     twod_prim = twod_layer.get_primitive_structure()
     substrate_prim = substrate.get_primitive_structure()
     n_prim_sub = substrate_prim.num_sites
-    print (n_prim_sub)
 
     try:
         #get aligned lattices
@@ -534,9 +533,7 @@ def run_lat_match(substrate, twod_layer, match_constraints):
         sub.sort()
         mat2d.sort()
         n_aligned_sub = sub.num_sites
-        print (n_aligned_sub)
         scell_size = n_aligned_sub / n_prim_sub
-        print (scell_size)
     except:
         print ('Lattice match failed at get_aligned_lattices..')
         return None, None, None
@@ -560,6 +557,6 @@ def run_lat_match(substrate, twod_layer, match_constraints):
             sd_index = z_inds[len(z_inds)-sd_layers] - 1
 
     if hetero_interface:
-        return  hetero_interface, n_sub, sd_index
+        return  hetero_interface, n_aligned_sub, sd_index
     else:
         return None, None, None
