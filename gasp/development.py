@@ -149,6 +149,10 @@ class Constraints(object):
                 self.allow_endpoints = constraints_parameters[
                     'allow_endpoints']
 
+            # sub_search flag (If needed in future)
+            if 'sub_search' in constraints_parameters:
+                self.sub_search = constraints_parameters['sub_search']
+
             # the per-species minimum interatomic distances
             if 'per_species_mids' not in constraints_parameters:
                 self.set_all_mids_to_defaults(composition_space)
@@ -793,8 +797,8 @@ class Developer(object):
         '''
         In case of substrate GA, the lattice vecotrs and number of atoms in the
         organism change post lattice match.
-        This method is similar to Develop(), only with relevant constraints being
-        tested.
+        This method is similar to Develop(), only with relevant constraints
+        being tested.
 
         Returns a boolean indicating whether the organism survived development.
 
@@ -830,11 +834,6 @@ class Developer(object):
                       'constraint, post LMA '.format(organism.id))
                 return False
 
-        # check the per-species minimum interatomic distance constraints
-        # This should not change during LMA, but does not harm to check again
-        if not self.satisfies_mids_constraints(organism, constraints, pre_dev=False):
-            return False
-
         return True
 
     def satisfies_post_lma_n_atoms(self, organism, constraints):
@@ -853,7 +852,7 @@ class Developer(object):
         if twod_atoms > constraints.max_num_atoms:
             print ('Organism {} failed max_num_atoms post LMA'.format(
                                                                 organism.id))
-            return False                                                    
+            return False
         # check max interface atoms constraint
         if organism.cell.num_sites > constraints.max_interface_atoms:
             print("Organism {} failed max interface atoms constraint ".format(

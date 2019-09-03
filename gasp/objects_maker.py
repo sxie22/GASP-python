@@ -76,17 +76,20 @@ def make_objects(parameters):
     objects_dict['composition_space'] = composition_space
 
     # make the constraints object
-    cons_min_num = 2
-    if substrate_search:
-        cons_min_num = 1    
     if 'Constraints' in parameters:
-        if 'min_num_atoms' in parameters['Constraints']:
-            if parameters['Constraints']['min_num_atoms'] < cons_min_num:
+        cons_min_num = 2
+        constraints_parameters = parameters['Constraints']
+        if substrate_search:
+            cons_min_num = 1
+            if 'sub_search' not in constraints_parameters:
+                constraints_parameters['sub_search'] = True
+        if 'min_num_atoms' in constraints_parameters:
+            if constraints_parameters['min_num_atoms'] < cons_min_num:
                 print('The value passed to the "min_num_atoms" keyword in the '
                       'Constraints block must greater than or equal to 2.')
                 print('Quitting...')
                 quit()
-        constraints = development.Constraints(parameters['Constraints'],
+        constraints = development.Constraints(constraints_parameters,
                                               composition_space)
     else:
         constraints = development.Constraints('default', composition_space)
