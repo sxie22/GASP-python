@@ -74,7 +74,7 @@ def main():
         sub_cell = general.Cell.from_file(os.path.abspath(sys.argv[2]))
         # make it conventional_standard_structure using pymatgen to avoid issues
         spgr_obj = SpacegroupAnalyzer(sub_cell)
-        substrate_prim = spgr_obj.get_conventional_standard_structure()
+        substrate_prim = spgr_obj.get_refined_structure()
 
     # get the objects from the dictionary for convenience
     run_dir_name = objects_dict['run_dir_name']
