@@ -65,7 +65,7 @@ class VaspEnergyCalculator(object):
 
     def do_energy_calculation(self, organism, dictionary, key,
                               composition_space, E_sub_prim=None,
-                              n_sub_prim=None, mu_A=None, mu_B=None, mu_C=None):
+                              n_sub_prim=None):
         """
         Calculates the energy of an organism using VASP, and stores the relaxed
         organism in the provided dictionary at the provided key. If the
@@ -272,7 +272,7 @@ class LammpsEnergyCalculator(object):
 
     def do_energy_calculation(self, organism, dictionary, key,
                               composition_space, E_sub_prim=None,
-                              n_sub_prim=None, mu_A=None, mu_B=None, mu_C=None):
+                              n_sub_prim=None):
         """
         Calculates the energy of an organism using LAMMPS, and stores the
         relaxed organism in the provided dictionary at the provided key. If the

@@ -316,11 +316,11 @@ def get_substrate_params(parameters):
         if 'mu_B' in sub_params:
             mu_B = sub_params['mu_B']
         else:
-            sub_params['mu_B'] = None
+            sub_params['mu_B'] = 0
         if 'mu_C' in sub_params:
             mu_C = sub_params['mu_C']
         else:
-            sub_params['mu_C'] = None
+            sub_params['mu_C'] = 0
 
         return sub_params
     else:
