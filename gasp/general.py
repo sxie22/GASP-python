@@ -653,9 +653,9 @@ class CompositionSpace(object):
         # Specify species A, B, C always in increasing atomic number
         sorted_elems = sorted(elems, key=lambda x: x.number)
         species_dict['specie_A'] = sorted_elems[0].name
-        if len(syms) > 1:
+        if len(elems) > 1:
             species_dict['specie_B'] = sorted_elems[1].name
-        if len(syms) > 2:
+        if len(elems) > 2:
             species_dict['specie_C'] = sorted_elems[2].name
         self.species_dict = species_dict
 
