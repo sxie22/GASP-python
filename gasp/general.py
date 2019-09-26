@@ -649,14 +649,14 @@ class CompositionSpace(object):
             self.endpoints))
 
         species_dict = {}
-        syms = [i.name for i in self.get_all_elements()]
+        elems = self.get_all_elements()
         # Specify species A, B, C always in increasing atomic number
-        sorted_twod_species = sorted(uniq_twod_species, key=lambda x: x.number)
-        species_dict['specie_A'] = sorted_twod_species[0]
+        sorted_elems = sorted(elems, key=lambda x: x.number)
+        species_dict['specie_A'] = sorted_elems[0].name
         if len(syms) > 1:
-            species_dict['specie_B'] = sorted_twod_species[1]
+            species_dict['specie_B'] = sorted_elems[1].name
         if len(syms) > 2:
-            species_dict['specie_C'] = sorted_twod_species[2]
+            species_dict['specie_C'] = sorted_elems[2].name
         self.species_dict = species_dict
 
 
