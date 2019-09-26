@@ -181,27 +181,27 @@ class VaspEnergyCalculator(object):
             cell_area = relaxed_cell.surface_area()
 
             # Species at each site in twod film
-            twod_species = relaxed_cell.species[-(n_iface - n_sub):]
-            uniq_twod_species = list(set(twod_species))
-            # Sort the species based on their atomic number
-            # NOTE: Specify species A, B, C always in increasing atomic number
-            sorted_twod_species = sorted(uniq_twod_species,
-                                         key=lambda x: x.number)
-            # Assign A, B, C in this order for twod species
+            film_species = relaxed_cell.species[-(n_iface - n_sub):]
+
+            # Get the species from composition_space
+            species_dict = composition_space.species_dict
+            specie_A = species_dict['specie_A']
+            if 'specie_B' in species_dict:
+                specie_B = species_dict['specie_B']
+            if 'specie_C' in species_dict:
+                specie_C = species_dict['specie_C']
+
             # Count the num of each species
-            specie_A = sorted_twod_species[0]
-            num_A = twod_species.count(specie_A)
+            num_A = film_species.count(specie_A)
             ref_en_A = num_A * mu_A
             # set num B and num C to zero to satisy ef equation
             ref_en_B, ref_en_C = 0, 0
             num_B, num_C = 0, 0
-            if len(sorted_twod_species) > 1:
-                specie_B = sorted_twod_species[1]
-                num_B = twod_species.count(specie_B)
+            if len(species_dict.keys()) > 1:
+                num_B = film_species.count(specie_B)
                 ref_en_B = num_B * mu_B
-            if len(sorted_twod_species) > 2:
-                specie_C = sorted_twod_species[2]
-                num_C = twod_species.count(specie_C)
+            if len(species_dict.keys()) > 2:
+                num_C = film_species.count(specie_C)
                 ref_en_C = num_C * mu_C
 
             ef = (enthalpy - factor * E_sub_prim - ref_en_A - ref_en_B \
@@ -383,28 +383,27 @@ class LammpsEnergyCalculator(object):
             cell_area = relaxed_cell.surface_area()
 
             # Species at each site in twod film
-            twod_species = relaxed_cell.species[-(n_iface - n_sub):]
-            uniq_twod_species = list(set(twod_species))
-            # Sort the species based on their atomic number
-            # NOTE: Specify species A, B, C always in increasing atomic number
-            sorted_twod_species = sorted(uniq_twod_species,
-                                         key=lambda x: x.number)
-            # Assign A, B, C in this order for twod species
-            # Count the num of each species
-            specie_A = sorted_twod_species[0]
-            num_A = twod_species.count(specie_A)
-            ref_en_A = num_A * mu_A
+            film_species = relaxed_cell.species[-(n_iface - n_sub):]
 
+            # Get the species from composition_space
+            species_dict = composition_space.species_dict
+            specie_A = species_dict['specie_A']
+            if 'specie_B' in species_dict:
+                specie_B = species_dict['specie_B']
+            if 'specie_C' in species_dict:
+                specie_C = species_dict['specie_C']
+
+            # Count the num of each species
+            num_A = film_species.count(specie_A)
+            ref_en_A = num_A * mu_A
             # set num B and num C to zero to satisy ef equation
             ref_en_B, ref_en_C = 0, 0
             num_B, num_C = 0, 0
-            if len(sorted_twod_species) > 1:
-                specie_B = sorted_twod_species[1]
-                num_B = twod_species.count(specie_B)
+            if len(species_dict.keys()) > 1:
+                num_B = film_species.count(specie_B)
                 ref_en_B = num_B * mu_B
-            if len(sorted_twod_species) > 2:
-                specie_C = sorted_twod_species[2]
-                num_C = twod_species.count(specie_C)
+            if len(species_dict.keys()) > 2:
+                num_C = film_species.count(specie_C)
                 ref_en_C = num_C * mu_C
 
             ef = (enthalpy - factor * E_sub_prim - ref_en_A - ref_en_B \
