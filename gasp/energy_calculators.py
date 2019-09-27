@@ -101,7 +101,7 @@ class VaspEnergyCalculator(object):
             cell = organism.cell
             n_sub = organism.n_sub
             sd_index = organism.sd_index
-            self.write_poscar(cell, n_sub, sd_index, job_dir_path)
+            self.write_poscar(cell, n_sub, sd_index, job_dir_path, no_z=no_z)
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
 
