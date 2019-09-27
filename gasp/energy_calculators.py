@@ -65,7 +65,8 @@ class VaspEnergyCalculator(object):
 
     def do_energy_calculation(self, organism, dictionary, key,
                               composition_space, E_sub_prim=None,
-                              n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0):
+                              n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0,
+                              no_z=False):
         """
         Calculates the energy of an organism using VASP, and stores the relaxed
         organism in the provided dictionary at the provided key. If the
@@ -226,7 +227,7 @@ class VaspEnergyCalculator(object):
         dictionary[key] = organism
 
 
-    def write_poscar(self, iface, n_sub, sd_index, job_dir_path):
+    def write_poscar(self, iface, n_sub, sd_index, job_dir_path, no_z=False):
         '''
         Returns POSCAR of the interface with sd flags and comment line
 
@@ -238,6 +239,10 @@ class VaspEnergyCalculator(object):
         sd_frozen = np.zeros((sd_index + 1, 3))
         sd_relax = np.ones((n_iface - sd_index -1, 3))
         sd_flags = np.concatenate((sd_frozen, sd_relax))
+        # If do not want atoms to relax in z-direction
+        if no_z is True:
+            sd_flags[:, 2] = np.zeros(len(sd_flags))
+
         #sd_flags = np.zeros_like(iface.frac_coords)
         #z_coords_iface = iface.frac_coords[:, 2]
         #sd_flags[np.where(z_coords_iface >= sd_index)] = np.ones((1, 3))
@@ -272,7 +277,8 @@ class LammpsEnergyCalculator(object):
 
     def do_energy_calculation(self, organism, dictionary, key,
                               composition_space, E_sub_prim=None,
-                              n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0):
+                              n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0,
+                              no_z=False):
         """
         Calculates the energy of an organism using LAMMPS, and stores the
         relaxed organism in the provided dictionary at the provided key. If the

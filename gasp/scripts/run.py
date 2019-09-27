@@ -155,8 +155,7 @@ def main():
                             whole_pop.append(copy.deepcopy(new_organism))
                             # pad with vacuum
                             geometry.pad(new_organism.cell)
-                            kwargs = {'E_sub_prim': None, 'n_sub_prim': None,
-                                      'mu_A': None, 'mu_B': None, 'mu_C': None}
+                            kwargs = {}
                             if substrate_search:
                                 # lattice match substrate
                                 new_organism.cell, new_organism.n_sub, \
@@ -272,8 +271,7 @@ def main():
                                                     copy.deepcopy(new_organism))
                                         # pad with vacuum
                                         geometry.pad(new_organism.cell)
-                                        kwargs = {'E_sub_prim': None, \
-                                                            'n_sub_prim': None}
+                                        kwargs = {}
                                         if substrate_search:
                                             # lattice match substrate
                                             new_organism.cell, \
@@ -385,8 +383,7 @@ def main():
             developer, redundancy_guard, composition_space, constraints)
         whole_pop.append(copy.deepcopy(unrelaxed_offspring))
         geometry.pad(unrelaxed_offspring.cell)
-        kwargs = {'E_sub_prim': None, 'n_sub_prim': None,
-                        'mu_A': None, 'mu_B': None, 'mu_C': None}
+        kwargs = {}
         if substrate_search:
             geometry.pad(unrelaxed_offspring.cell)
             unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
@@ -498,8 +495,7 @@ def main():
                             composition_space, constraints)
                     whole_pop.append(copy.deepcopy(unrelaxed_offspring))
                     geometry.pad(unrelaxed_offspring.cell)
-                    kwargs = {'E_sub_prim': None, 'n_sub_prim': None,
-                                'mu_A': None, 'mu_B': None, 'mu_C': None}
+                    kwargs = {}
 
                     if substrate_search:
                         unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \

@@ -313,15 +313,12 @@ def get_substrate_params(parameters):
         sub_params = parameters['Substrate']
         # A, B, C are species in film only
         # Atleast should provide mu_A assuming only one species
-        if 'mu_B' in sub_params:
-            mu_B = sub_params['mu_B']
-        else:
-            sub_params['mu_B'] = 0
-        if 'mu_C' in sub_params:
-            mu_C = sub_params['mu_C']
-        else:
-            sub_params['mu_C'] = 0
-
+        #if 'mu_B' not in sub_params:
+        #    sub_params['mu_B'] = 0
+        #if 'mu_C' not in sub_params:
+        #    sub_params['mu_C'] = 0
+        #if 'no_z' not in sub_params:
+        #        sub_params['no_z'] = False
         return sub_params
     else:
         return None
