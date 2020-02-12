@@ -27,7 +27,7 @@ import sys
 import yaml
 import os
 import datetime
-
+from time import sleep
 
 def main():
     # get dictionaries from the input file (in yaml format)
@@ -184,6 +184,7 @@ def main():
                                 kwargs=kwargs)
                             thread.start()
                             threads.append(thread)
+                            sleep(9)
 
             # process finished calculations and start new ones
             else:
@@ -408,6 +409,7 @@ def main():
                   composition_space], kwargs=kwargs)
         new_thread.start()
         threads.append(new_thread)
+        sleep(9)
 
     # process finished calculations and start new ones
     while not stopping_criteria.are_satisfied:
