@@ -240,6 +240,7 @@ class Mating(object):
         # make the offspring organism from the offspring cell
         offspring = Organism(offspring_cell, id_generator, self.name,
                              composition_space)
+        offspring.parents = (parent1.id, parent2.id)
         print('Creating offspring organism {} from parent organisms {} and {} '
               'with the mating variation '.format(offspring.id, parent1.id,
                                                   parent2.id))
@@ -755,6 +756,7 @@ class StructureMut(object):
 
         # create a new organism from the perturbed cell
         offspring = Organism(cell, id_generator, self.name, composition_space)
+        offspring.parents = (parent_org.id)
         print('Creating offspring organism {} from parent organism {} with '
               'the structure mutation variation '.format(offspring.id,
                                                          parent_org.id))
@@ -991,6 +993,7 @@ class NumAtomsMut(object):
 
         # create a new organism from the cell
         offspring = Organism(cell, id_generator, self.name, composition_space)
+        offspring.parents = (parent_org.id)
         print('Creating offspring organism {} from parent organism {} with '
               'the number of atoms mutation variation '.format(
                   offspring.id, parent_org.id))
@@ -1269,6 +1272,7 @@ class Permutation(object):
 
         # make a new organism from the cell
         offspring = Organism(cell, id_generator, self.name, composition_space)
+        offspring.parents = (parent_org.id)
         print('Creating offspring organism {} from parent organism {} with '
               'the permutation variation '.format(offspring.id, parent_org.id))
         return offspring

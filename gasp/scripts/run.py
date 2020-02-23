@@ -114,7 +114,7 @@ def main():
     parameters_printer.print_parameters(objects_dict, lat_match_dict=lat_match_dict)
 
     # make the data writer
-    data_writer = general.DataWriter(garun_dir + '/run_data',
+    data_writer = general.DataWriter(garun_dir,
                             composition_space, sub_search=substrate_search)
 
     whole_pop = []

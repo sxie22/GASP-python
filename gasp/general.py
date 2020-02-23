@@ -114,7 +114,8 @@ class Organism(object):
         self._id = id_generator.make_id()
         # the name of the algorithm that created this organism
         self.made_by = maker
-
+        # save the ids of parents if made by variation
+        self.parents = None
         # Substrate related defaults
         # Number of atoms of the substrate in the interface
         self.n_sub = None
@@ -934,17 +935,18 @@ class DataWriter(object):
     For writing useful data to a file in the course of a search.
     """
 
-    def __init__(self, file_path, composition_space, sub_search=False):
+    def __init__(self, garun_dir, composition_space, sub_search=False):
         """
         Makes a DataWriter.
 
         Args:
-            file_path: the path to the file where the data is to be written
+            garun_dir: the path to the garun directory where run_data file is
+            to be written
 
             composition_space: the CompositionSpace of the search
         """
 
-        self.file_path = file_path
+        self.file_path = garun_dir + '/run_data'
         self.sub_search = sub_search
         with open(self.file_path, 'a') as data_file:
             data_file.write('Composition space endpoints: ')
@@ -958,6 +960,10 @@ class DataWriter(object):
             else:
                 data_file.write('id\t comp\t n-2D\t n-sub\t surface area\t '
                                 'total energy\t  epa\t\t num calcs\t best value\n\n')
+
+        self.genes_file = garun_dir + '/genes_data'
+        with open(self.genes_file, 'a') as genes:
+            genes.write('id\t parents id(s)\t maker\n\n')
 
     def write_data(self, organism, num_calcs, progress):
         """
@@ -1013,3 +1019,18 @@ class DataWriter(object):
                 data_file.write(format_string.format(
                     organism.id, formula, organism.total_energy, organism.epa,
                     num_calcs, progress))
+
+        # write genes_data file
+        write_genes_file(organism)
+
+    def write_genes_file(self, organism):
+        """
+        Writes the maker of every organism and including parents for an
+        offspring organism to a file "genes_data" in the garun folder.
+
+        Args:
+            organism: the Organism whose data to write
+        """
+        with open(self.genes_file, 'a') as genes:
+            data_file.write('{0}\t {1}\t {2}\n'.format(
+                            organism.id, organism.parents, organism.maker))
