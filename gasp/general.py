@@ -1021,7 +1021,7 @@ class DataWriter(object):
                     num_calcs, progress))
 
         # write genes_data file
-        write_genes_file(organism)
+        self.write_genes_file(organism)
 
     def write_genes_file(self, organism):
         """
