@@ -1032,5 +1032,5 @@ class DataWriter(object):
             organism: the Organism whose data to write
         """
         with open(self.genes_file, 'a') as genes:
-            data_file.write('{0}\t {1}\t {2}\n'.format(
+            genes.write('{0}\t {1}\t {2}\n'.format(
                             organism.id, organism.parents, organism.maker))
