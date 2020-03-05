@@ -1033,4 +1033,4 @@ class DataWriter(object):
         """
         with open(self.genes_file, 'a') as genes:
             genes.write('{0}\t {1}\t {2}\n'.format(
-                            organism.id, organism.parents, organism.maker))
+                            organism.id, organism.parents, organism.made_by))
