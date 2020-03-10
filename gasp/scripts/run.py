@@ -131,14 +131,23 @@ def main():
     for creator in organism_creators:
         print('Making {} organisms with {}'.format(creator.number,
                                                    creator.name))
+        n_whiles1 = 0
+        iface_attempts = 0
         while not creator.is_finished and not stopping_criteria.are_satisfied:
 
+            n_whiles1 += 1
             # start initial batch of energy calculations
             if len(threads) < num_calcs_at_once:
                 # make a new organism - keep trying until we get one
                 new_organism = creator.create_organism(
                     id_generator, composition_space, constraints, random)
+                n_whiles2 = 0
                 while new_organism is None and not creator.is_finished:
+                    n_whiles2 += 1
+                    if n_whiles2 % 1000 == 0:
+                        print ('145: Program can\'t make new random organism')
+                        print ('whiles1: {0}\nwhiles2: {1}'.format(
+                                                        n_whiles1, n_whiles2))
                     new_organism = creator.create_organism(
                         id_generator, composition_space, constraints, random)
                 if new_organism is not None:  # loop above could return None
@@ -157,6 +166,9 @@ def main():
                             geometry.pad(new_organism.cell)
                             kwargs = {}
                             if substrate_search:
+                                iface_attempts += 1
+                                if iface_attempts % 1000 == 0:
+                                    print ('172: Failing at making interface')
                                 # lattice match substrate
                                 new_organism.cell, new_organism.n_sub, \
                                             new_organism.sd_index = \
@@ -175,6 +187,8 @@ def main():
                                     # remove the organism from whole_pop
                                     del whole_pop[-1]
                                     continue
+                            iface_attempts = 0
+                            n_whiles1 = 0
                             stopping_criteria.update_calc_counter()
                             index = len(threads)
                             thread = threading.Thread(
@@ -246,12 +260,22 @@ def main():
 
                         # make another organism for the initial population
                         started_new_calc = False
+                        n_whiles3 = 0
+                        iface2_attempts = 0
                         while not started_new_calc and not creator.is_finished:
+                            n_whiles3 +=1
                             new_organism = creator.create_organism(
                                 id_generator, composition_space,
                                 constraints, random)
+                            n_whiles4 = 0
                             while new_organism is None and not \
                                     creator.is_finished:
+                                n_whiles4 += 1
+                                if n_whiles4 % 1000 == 0:
+                                    print ('269: Program could not make new '
+                                                'random organism')
+                                    print ('whiles3: {0}\nwhiles4: {1}'.format(
+                                                    n_whiles3, n_whiles4))
                                 new_organism = creator.create_organism(
                                     id_generator, composition_space,
                                     constraints, random)
@@ -274,6 +298,9 @@ def main():
                                         geometry.pad(new_organism.cell)
                                         kwargs = {}
                                         if substrate_search:
+                                            iface2_attempts += 1
+                                            if iface2_attempts % 1000 == 0:
+                                                print ('303: Failing at making interface')
                                             # lattice match substrate
                                             new_organism.cell, \
                                             new_organism.n_sub, \
@@ -295,6 +322,8 @@ def main():
                                                 # remove the organism from whole_pop
                                                 del whole_pop[-1]
                                                 continue
+                                        n_whiles3 = 0
+                                        iface2_attempts = 0
                                         stopping_criteria.update_calc_counter()
                                         new_thread = threading.Thread(
                                             target=energy_calculator.do_energy_calculation,
@@ -314,7 +343,11 @@ def main():
     # creator finished
     num_to_get = num_calcs_at_once  # number of threads left to handle
     handled_indices = []  # the indices of the threads we've already handled
+    n_whiles5 = 0
     while num_to_get > 0:
+        n_whiles5 += 1
+        if n_whiles5 % 10000 == 0:
+            print ('340: processing threads whiles: ', n_whiles5)
         for index, thread in enumerate(threads):
             if not thread.is_alive() and index not in handled_indices:
                 num_finished_calcs += 1
@@ -378,7 +411,10 @@ def main():
     # create the initial batch of offspring organisms and submit them for
     # energy calculations
     # while statement because unrelaxed_offspring could fail lattice matching
+    n_whiles5 = 0
+    iface3_attempts = 0
     while len(threads) < num_calcs_at_once:
+        n_whiles5 += 1
         unrelaxed_offspring = offspring_generator.make_offspring_organism(
             random, pool, variations, geometry, id_generator, whole_pop,
             developer, redundancy_guard, composition_space, constraints)
@@ -386,6 +422,12 @@ def main():
         geometry.pad(unrelaxed_offspring.cell)
         kwargs = {}
         if substrate_search:
+            iface3_attempts += 1
+            if iface3_attempts % 1000 == 0:
+                print ('427: Failing at making interface')
+                print ('whiles, iface attempts: ', (n_whiles5, iface3_attempts))
+                if iface3_attempts == 10000:
+                    quit()
             geometry.pad(unrelaxed_offspring.cell)
             unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
             unrelaxed_offspring.sd_index = interface.run_lat_match(
@@ -401,6 +443,7 @@ def main():
                 # remove the organism from whole_pop
                 del whole_pop[-1]
                 continue
+        iface3_attempts = 0
         stopping_criteria.update_calc_counter()
         index = len(threads)
         new_thread = threading.Thread(
@@ -412,7 +455,9 @@ def main():
         sleep(9)
 
     # process finished calculations and start new ones
+    n_whiles6 = 0
     while not stopping_criteria.are_satisfied:
+        n_whiles6 += 1
         for index, thread in enumerate(threads):
             if not thread.is_alive():
                 num_finished_calcs += 1
@@ -489,7 +534,12 @@ def main():
                                   '{} '.format(num_finished_calcs))
 
                 # make another offspring organism
-                if not stopping_criteria.are_satisfied:
+                started_new_calc = False
+                n_whiles7 = 0
+                iface4_attempts = 0
+                while not stopping_criteria.are_satisfied and \
+                                            not started_new_calc:
+                    n_whiles7 += 1
                     unrelaxed_offspring = \
                         offspring_generator.make_offspring_organism(
                             random, pool, variations, geometry, id_generator,
@@ -500,6 +550,12 @@ def main():
                     kwargs = {}
 
                     if substrate_search:
+                        iface4_attempts += 1
+                        if iface4_attempts % 1000 == 0:
+                            print ('554: Failing at making interface')
+                            print ('whiles, iface attempts: ', (n_whiles7, iface4_attempts))
+                            if iface3_attempts == 10000:
+                                quit()
                         unrelaxed_offspring.cell, unrelaxed_offspring.n_sub, \
                         unrelaxed_offspring.sd_index = interface.run_lat_match(
                                 substrate_prim, unrelaxed_offspring.cell, match_constraints)
@@ -514,6 +570,7 @@ def main():
                             # remove the organism from whole_pop
                             del whole_pop[-1]
                             continue
+                    iface4_attempts = 0
                     stopping_criteria.update_calc_counter()
                     new_thread = threading.Thread(
                         target=energy_calculator.do_energy_calculation,
@@ -521,6 +578,7 @@ def main():
                               index, composition_space], kwargs=kwargs)
                     new_thread.start()
                     threads[index] = new_thread
+                    started_new_calc = True
 
     # process all the calculations that were still running when the
     # stopping criteria were achieved
