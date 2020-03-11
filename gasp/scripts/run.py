@@ -198,10 +198,13 @@ def main():
                                 kwargs=kwargs)
                             thread.start()
                             threads.append(thread)
-                            sleep(9)
+                            sleep(5)
 
             # process finished calculations and start new ones
             else:
+                alive_threads = threading.enumerate()
+                if len(alive_threads) == len(threads):
+                    sleep(300)
                 for index, thread in enumerate(threads):
                     if not thread.is_alive():
                         num_finished_calcs += 1
@@ -335,6 +338,7 @@ def main():
                                         threads[index] = new_thread
                                         started_new_calc = True
 
+
     # depending on how the loop above exited, update bookkeeping
     if not stopping_criteria.are_satisfied:
         num_finished_calcs = num_finished_calcs - 1
@@ -348,6 +352,9 @@ def main():
         n_whiles5 += 1
         if n_whiles5 % 10000 == 0:
             print ('340: processing threads whiles: ', n_whiles5)
+        alive_threads = threading.enumerate()
+        if len(alive_threads) == len(threads):
+            sleep(300)
         for index, thread in enumerate(threads):
             if not thread.is_alive() and index not in handled_indices:
                 num_finished_calcs += 1
@@ -452,13 +459,16 @@ def main():
                   composition_space], kwargs=kwargs)
         new_thread.start()
         threads.append(new_thread)
-        sleep(9)
+        sleep(5)
 
     # process finished calculations and start new ones
     n_whiles6 = 0
     while not stopping_criteria.are_satisfied:
         n_whiles6 += 1
         for index, thread in enumerate(threads):
+            alive_threads = threading.enumerate()
+            if len(alive_threads) == len(threads):
+                sleep(300)
             if not thread.is_alive():
                 num_finished_calcs += 1
                 relaxed_offspring = relaxed_organisms[index]
@@ -586,6 +596,9 @@ def main():
     handled_indices = []  # the indices of the threads we've already handled
     while num_to_get > 0:
         for index, thread in enumerate(threads):
+            alive_threads = threading.enumerate()
+            if len(alive_threads) == len(threads):
+                sleep(300)
             if not thread.is_alive() and index not in handled_indices:
                 num_finished_calcs += 1
                 relaxed_offspring = relaxed_organisms[index]
