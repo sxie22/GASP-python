@@ -82,6 +82,9 @@ class Mating(object):
         # the cutoff distance (as fraction of atomic radius) below which to
         # merge sites with the same element in the offspring structure
         self.default_merge_cutoff = 1.0
+        # whether to reduce both the parents to primitive (only for interface
+        # geometry)
+        self.default_reduce_both_interfaces = 0.5
 
         # the mean of the cut location
         if 'mu_cut_loc' not in mating_params:
@@ -139,6 +142,13 @@ class Mating(object):
             self.merge_cutoff = self.default_merge_cutoff
         else:
             self.merge_cutoff = mating_params['merge_cutoff']
+
+        if 'reduce_both_interfaces' not in mating_params:
+            self.reduce_both_interfaces = self.default_reduce_both_interfaces
+        elif mating_params['reduce_both_interfaces'] in (None, 'default'):
+            self.reduce_both_interfaces = self.default_reduce_both_interfaces
+        else:
+            self.reduce_both_interfaces = mating_params['reduce_both_interfaces']
 
     def do_variation(self, pool, random, geometry, constraints, id_generator,
                      composition_space):
@@ -217,6 +227,16 @@ class Mating(object):
                                        excluded_org=parent1)
         cell_1 = copy.deepcopy(parent1.cell)
         cell_2 = copy.deepcopy(parent2.cell)
+
+        # For interface goemetry, get the primitive cells of either one or
+        # both the parent cells. This is to allow large area low energy
+        # structures to mate within constraints of lattice lenghts. Else,
+        # the generated offspring often fails lattice length or area in
+        # make_offspring_cell()
+        if geometry.shape == 'interface':
+            cell_1 = cell_1.get_primitive_structure()
+            if random.random() < self.reduce_both_interfaces:
+                cell_2 = cell_2.get_primitive_structure()
 
         # optionally double one of the parents
         if random.random() < self.doubling_prob:
