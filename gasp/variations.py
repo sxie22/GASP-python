@@ -143,12 +143,19 @@ class Mating(object):
         else:
             self.merge_cutoff = mating_params['merge_cutoff']
 
+        # Following parameters are only used for an interface search
         if 'reduce_both_interfaces' not in mating_params:
             self.reduce_both_interfaces = self.default_reduce_both_interfaces
         elif mating_params['reduce_both_interfaces'] in (None, 'default'):
             self.reduce_both_interfaces = self.default_reduce_both_interfaces
         else:
-            self.reduce_both_interfaces = mating_params['reduce_both_interfaces']
+            self.reduce_both_interfaces = \
+                                    mating_params['reduce_both_interfaces']
+        # used to optionally half large area offspring cells
+        if 'halve_offspring_prob' in mating_params:
+            self.halve_offspring_prob = mating_params['halve_offspring_prob']
+        else:
+            self.halve_offspring_prob = 0.25 # default 
 
     def do_variation(self, pool, random, geometry, constraints, id_generator,
                      composition_space):
@@ -431,13 +438,24 @@ class Mating(object):
                                 np.array(parent_cell_2.lattice.angles))
         offspring_lattice = Lattice.from_lengths_and_angles(offspring_lengths,
                                                             offspring_angles)
-
         # make the offspring cell
-        return Cell(offspring_lattice, offspring_species,
-                    offspring_frac_coords)
+        offspring_cell = Cell(offspring_lattice, offspring_species,
+                              offspring_frac_coords)
 
-    def do_random_shift(self, cell, lattice_vector_index, geometry,
-                        random):
+        # optionally halve the offspring cell when area is too large to reduce
+        # monotony of large area structures in newly created offspring (happens
+        # as the interface search progresses.)
+        if geometry.shape == 'interface':
+            m = offspring_cell.lattice.matrix
+            area = np.linalg.norm(np.cross(m[0], m[1]))
+            if area > 50: # hardcoded limit to protect small cells from halving
+                if random.random() < self.halve_offspring_prob:
+                    offspring_cell = self.halve_offspring(offspring_cell,
+                                                          cut_vector_index)
+
+        return offspring_cell
+
+    def do_random_shift(self, cell, lattice_vector_index, geometry, random):
         """
         Modifies a cell by shifting the atoms along one of the lattice
         vectors. Makes sure all the atoms lie inside the cell after the shift
@@ -631,6 +649,34 @@ class Mating(object):
         else:
             return new_cell
 
+    def halve_offspring(self, offspring_cell, mated_vector_index):
+        """
+        Half the cell along the lattice vector direction that is not
+        lattice_vector_index. Remove one half and return the other.
+        Args:
+        offspring_cell: newly created offspring cell (by mating variation)
+
+        mated_vector_index: (0 or 1) the lattice vector along which slicing
+                            is made in the mating variation for this offspring
+        """
+        halve_index = 0
+        # opposite of mated lattice vector for offspring
+        if mated_vector_index == 0: # can only be 0 or 1
+            halve_index = 1
+        latt_mat = offspring_cell.lattice.matrix
+        latt_mat[halve_index] = latt_mat[halve_index] / 2
+
+        offspring_species = []
+        offspring_cart_coords = []
+        for site in offspring_cell.sites:
+            if site.frac_coords[halve_index] <= 0.5:
+                offspring_species.append(site.specie)
+                offspring_cart_coords.append(site.coords)
+
+        halved_offspring_cell = Cell(new_latt, offspring_species,
+                            offspring_cart_coords, coords_are_cartesian=True)
+
+        return halved_offspring_cell
 
 class StructureMut(object):
     """
