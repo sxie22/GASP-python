@@ -685,14 +685,21 @@ class CompositionSpace(object):
         energy chosen, use 'pd' or 'epa' type objective_function respectively.
         """
 
-        # if len(self.endpoints) == 1:
-        #    return 'epa'
-        # else:
-        #    for point in self.endpoints:
-        #        for next_point in self.endpoints:
-        #            if not point.almost_equals(next_point, 0.0, 0.0):
-        #                return 'pd'
-        return 'epa'
+        if len(self.endpoints) == 1:
+            obj = 'epa'
+        else:
+            for point in self.endpoints:
+                for next_point in self.endpoints:
+                    if not point.almost_equals(next_point, 0.0, 0.0):
+                        obj = 'pd'
+
+        # For substrate search, use 'epa' here. However, chemical potential
+        # based surface free energy is used as objective function, although,
+        # it reads 'epa'. See energy_calculators.do_energy_calculation for more
+        if self.sub_search:
+            obj = 'epa'
+
+        return obj
 
     def get_center(self):
         """
