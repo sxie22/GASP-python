@@ -737,22 +737,32 @@ class Pool(object):
         # if not excluding an organism, then select based on standard selection
         # probabilities
         if excluded_org is None:
-            rand = random.random()
-            for organism in pool_list:
-                if rand >= organism.selection_loc and rand < (
-                        organism.selection_loc + organism.selection_prob):
-                    return organism
+            found = False
+            while not found:
+                rand = random.random()
+                for i, organism in enumerate(pool_list):
+                    if rand >= organism.selection_loc and rand < (
+                            organism.selection_loc + organism.selection_prob):
+                        found = True
+                        ind = i
+                        break
+            return pool_list[ind]
         # if excluding an organism, first compute relative selection
         # probabilities, then select based on those
         else:
             self.compute_relative_fitnesses(excluded_org, composition_space)
             self.compute_relative_selection_probs()
-            rand = random.random()
-            for organism in pool_list:
-                if rand >= organism.relative_selection_loc and rand < (
-                        organism.relative_selection_loc +
-                        organism.relative_selection_prob):
-                    return organism
+            found = False
+            while not found:
+                rand = random.random()
+                for i, organism in enumerate(pool_list):
+                    if rand >= organism.relative_selection_loc and rand < (
+                            organism.relative_selection_loc +
+                            organism.relative_selection_prob):
+                        found = True
+                        ind = i
+                        break
+            return pool_list[ind]
 
     def print_summary(self, composition_space):
         """
