@@ -19,6 +19,8 @@ do_energy_calculation() method.
 3. GulpEnergyCalculator: for using GULP to compute energies
 
 """
+import sys
+sys.path = ['/ufrc/hennig/kvs.chaitanya/relaxation/others/gasp_practise/develop/GASP-python'] + sys.path
 
 from gasp.general import Cell
 
@@ -34,6 +36,8 @@ import shutil
 import subprocess
 import os
 import collections
+
+from time import sleep
 
 
 class VaspEnergyCalculator(object):
@@ -224,7 +228,7 @@ class VaspEnergyCalculator(object):
             print('Setting energy (epa) of organism {} to {} '
                   'eV/atom '.format(organism.id, organism.epa))
 
-        dictionary[key] = organism
+        return organism
 
 
     def write_poscar(self, iface, n_sub, sd_index, job_dir_path, no_z=False):
@@ -431,7 +435,7 @@ class LammpsEnergyCalculator(object):
             print('Setting energy of organism {} to {} eV/atom '.format(
                         organism.id, organism.epa))
 
-        dictionary[key] = organism
+        return organism
 
     def conform_to_lammps(self, cell):
         """
