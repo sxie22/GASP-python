@@ -272,6 +272,42 @@ def make_objects(parameters):
     pool.comp_fitness_weight = comp_fitness_weight
     objects_dict['pool'] = pool
 
+    job_specs = {}
+    if 'job_specs' in parameters:
+        job_specs = parameters['job_specs']
+
+    if 'cores' in job_specs:
+        if job_specs['cores'] > 8:
+            print ('Using max. default cpus_per_task: 8')
+            job_specs['cores'] = 8
+    else:
+        # default cpus_per_task for a worker
+        job_specs['cores'] = 1
+
+    if not 'walltime' in job_specs:
+        print ('Using default wall time of 24:00:00')
+        job_specs['walltime'] = '24:00:00'
+
+    if 'memory' not in job_specs:
+        # default job memory for a worker
+        print ('Using default total memory of 8GB per worker')
+        job_specs['memory'] = '8GB'
+
+    if not 'project' in job_specs:
+        print ('Please specify the project "#SBATCH -A" tag for worker.')
+        quit()
+
+    if not 'queue' in job_specs:
+        print ('Please specify the queue name to start workers in..')
+        print ('Ex: hpg2-compute\nQuitting..')
+        quit()
+
+    if not 'interface' in job_specs:
+        # print ('Using default \'ib0\' fot interface.')
+        job_specs['interface'] = 'ib0'
+
+    objects_dict['job_specs'] = job_specs
+
     return objects_dict
 
 def get_lat_match_params(parameters):

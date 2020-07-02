@@ -93,6 +93,7 @@ def main():
     pool = objects_dict['pool']
     variations = objects_dict['variations']
     id_generator = objects_dict['id_generator']
+    job_specs = objects_dict['job_specs']
 
     # get the path to the run directory - append date and time if
     # the given or default run directory already exists
@@ -123,13 +124,13 @@ def main():
                             composition_space, sub_search=substrate_search)
 
     # start cluster and scale jobs
-    cluster_job = SLURMCluster(cores=1,
-                               memory="1GB",
-                               project='hennig',
-                               queue='hpg2-compute',
-                               interface='ib0',
-                               walltime='1:00:00',
-                               job_extra=['--ntasks 2', '--nodes=1'])
+    cluster_job = SLURMCluster(cores=job_specs['cores'],
+                               memory=job_specs['mem'],
+                               project=job_specs['project'],
+                               queue=job_specs['queue'],
+                               interface=job_specs['interface'],
+                               walltime=job_specs['walltime'],
+                               job_extra=job_specs['job_extra'])
     cluster_job.scale(num_calcs_at_once) # number of parallel jobs
     client  = Client(cluster_job)
 

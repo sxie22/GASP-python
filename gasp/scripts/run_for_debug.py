@@ -4,7 +4,7 @@
 from __future__ import division, unicode_literals, print_function
 
 import sys
-sys.path = ['/ufrc/hennig/kvs.chaitanya/relaxation/others/gasp_practise/develop/GASP-python'] + sys.path
+#sys.path = ['/ufrc/hennig/kvs.chaitanya/relaxation/others/gasp_practise/develop/GASP-python'] + sys.path
 #sys.path.remove('/home/kvs.chaitanya/gasp_branches/GASP-python')
 
 """
@@ -82,6 +82,7 @@ energy_calculator = objects_dict['energy_calculator']
 pool = objects_dict['pool']
 variations = objects_dict['variations']
 id_generator = objects_dict['id_generator']
+job_specs = objects_dict['job_specs']
 
 # get the path to the run directory - append date and time if
 # the given or default run directory already exists
