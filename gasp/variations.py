@@ -155,7 +155,7 @@ class Mating(object):
         if 'halve_offspring_prob' in mating_params:
             self.halve_offspring_prob = mating_params['halve_offspring_prob']
         else:
-            self.halve_offspring_prob = 0.25 # default 
+            self.halve_offspring_prob = 0.25 # default
 
     def do_variation(self, pool, random, geometry, constraints, id_generator,
                      composition_space):
@@ -419,11 +419,11 @@ class Mating(object):
             # get the site contributions of each parent
             for site in parent_cell_1.sites:
                 if site.frac_coords[cut_vector_index] <= cut_location:
-                    species_from_parent_1.append(site.species_and_occu)
+                    species_from_parent_1.append(site.species)
                     frac_coords_from_parent_1.append(site.frac_coords)
             for site in parent_cell_2.sites:
                 if site.frac_coords[cut_vector_index] > cut_location:
-                    species_from_parent_2.append(site.species_and_occu)
+                    species_from_parent_2.append(site.species)
                     frac_coords_from_parent_2.append(site.frac_coords)
 
         # combine the information for the sites contributed by each parent
@@ -434,10 +434,12 @@ class Mating(object):
         # compute the lattice vectors of the offspring
         offspring_lengths = 0.5*(np.array(parent_cell_1.lattice.abc) +
                                  np.array(parent_cell_2.lattice.abc))
+        a_off, b_off, c_off = offspring_lengths
         offspring_angles = 0.5*(np.array(parent_cell_1.lattice.angles) +
                                 np.array(parent_cell_2.lattice.angles))
-        offspring_lattice = Lattice.from_lengths_and_angles(offspring_lengths,
-                                                            offspring_angles)
+        alpha, beta, gamma = offspring_angles
+        offspring_lattice = Lattice.from_parameters(a_off, b_off, c_off,
+                                                            alpha, beta, gamma)
         # make the offspring cell
         offspring_cell = Cell(offspring_lattice, offspring_species,
                               offspring_frac_coords)
@@ -664,7 +666,9 @@ class Mating(object):
         if mated_vector_index == 0: # can only be 0 or 1
             halve_index = 1
         latt_mat = offspring_cell.lattice.matrix
-        latt_mat[halve_index] = latt_mat[halve_index] / 2
+        new_latt = latt_mat.copy()
+        new_latt[halve_index] = latt_mat[halve_index] / 2
+        new_latt = Lattice(new_latt)
 
         offspring_species = []
         offspring_cart_coords = []
@@ -918,7 +922,7 @@ class StructureMut(object):
         new_b = strain_matrix.dot(cell.lattice.matrix[1])
         new_c = strain_matrix.dot(cell.lattice.matrix[2])
         new_lattice = Lattice([new_a, new_b, new_c])
-        cell.modify_lattice(new_lattice)
+        cell.lattice = new_lattice
 
 
 class NumAtomsMut(object):

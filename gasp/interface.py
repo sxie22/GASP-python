@@ -482,7 +482,7 @@ def get_aligned_lattices(slab_sub, slab_2d, max_area=200,
                 substrate.lattice.matrix[1, :],
                 mat2d.lattice.matrix[2, :]
             ]))
-    mat2d.modify_lattice(lmap)
+    mat2d.lattice = lmap
 
     return substrate, mat2d
 
