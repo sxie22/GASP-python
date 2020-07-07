@@ -343,7 +343,7 @@ class LammpsEnergyCalculator(object):
             cell = organism.cell
             n_sub = organism.n_sub
             sd_index = organism.sd_index
-            self.write_poscar(cell, n_sub, sd_index, job_dir_path)
+            self.write_poscar(cell, n_sub, sd_index, job_dir_path, no_z=no_z)
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR.' +
                          str(organism.id) + '_unrelaxed')
@@ -665,7 +665,7 @@ class LammpsEnergyCalculator(object):
                 energy = float(lines[i + 2].split()[4])
         return energy
 
-    def write_poscar(self, iface, n_sub, sd_index, job_dir_path):
+    def write_poscar(self, iface, n_sub, sd_index, job_dir_path, no_z=False):
         '''
         Writes POSCAR of the interface with sd flags and comment line in job dir
 
@@ -692,7 +692,7 @@ class LammpsEnergyCalculator(object):
         # If do not want atoms to relax in z-direction
         if no_z is True:
             sd_flags[:, 2] = np.zeros(len(sd_flags))
-            
+
         #sd_flags = np.zeros_like(iface.frac_coords)
         #z_coords_iface = iface.frac_coords[:, 2]
         #sd_flags[np.where(z_coords_iface >= sd_index)] = np.ones((1, 3))

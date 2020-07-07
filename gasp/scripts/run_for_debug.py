@@ -184,7 +184,7 @@ for creator in organism_creators:
                                 continue
                         out = client.submit(
                                 energy_calculator.do_energy_calculation,
-                                new_organism, {}, 0, composition_space,
+                                new_organism, composition_space,
                                 **substrate_params)
                         futures.append(out)
 
@@ -286,7 +286,7 @@ while not stopping_criteria.are_satisfied:
 
         out = client.submit(
                         energy_calculator.do_energy_calculation,
-                        unrelaxed_offspring, {}, 0,
+                        unrelaxed_offspring,
                         composition_space,
                         **substrate_params
                             )

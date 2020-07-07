@@ -124,7 +124,7 @@ def main():
 
     # start cluster and scale jobs
     cluster_job = SLURMCluster(cores=job_specs['cores'],
-                               memory=job_specs['mem'],
+                               memory=job_specs['memory'],
                                project=job_specs['project'],
                                queue=job_specs['queue'],
                                interface=job_specs['interface'],
@@ -135,7 +135,6 @@ def main():
 
     # To hold futures
     futures = []
-
     whole_pop = []
     num_finished_calcs = 0
     initial_population = population.InitialPopulation(run_dir_name)
@@ -189,7 +188,7 @@ def main():
                                     continue
                             out = client.submit(
                                     energy_calculator.do_energy_calculation,
-                                    new_organism, {}, 0, composition_space,
+                                    new_organism, composition_space,
                                     **substrate_params)
                             futures.append(out)
 
@@ -293,7 +292,7 @@ def main():
 
             out = client.submit(
                             energy_calculator.do_energy_calculation,
-                            unrelaxed_offspring, {}, 0,
+                            unrelaxed_offspring,
                             composition_space,
                             **substrate_params
                                 )
