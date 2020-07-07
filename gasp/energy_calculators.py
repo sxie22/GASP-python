@@ -20,7 +20,6 @@ do_energy_calculation() method.
 
 """
 import sys
-sys.path = ['/ufrc/hennig/kvs.chaitanya/relaxation/others/gasp_practise/develop/GASP-python'] + sys.path
 
 from gasp.general import Cell
 

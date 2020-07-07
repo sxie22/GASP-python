@@ -303,7 +303,7 @@ def make_objects(parameters):
         quit()
 
     if not 'interface' in job_specs:
-        # print ('Using default \'ib0\' fot interface.')
+        print ('Using default \'ib0\' fot interface.')
         job_specs['interface'] = 'ib0'
 
     objects_dict['job_specs'] = job_specs

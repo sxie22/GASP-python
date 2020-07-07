@@ -39,6 +39,7 @@ def print_parameters(objects_dict, lat_match_dict=None):
     energy_calculator = objects_dict['energy_calculator']
     pool = objects_dict['pool']
     variations = objects_dict['variations']
+    job_specs = objects_dict['job_specs']
 
     # make the file where the parameters will be printed
     with open(os.getcwd() + '/ga_parameters', 'w') as parameters_file:
@@ -160,6 +161,10 @@ def print_parameters(objects_dict, lat_match_dict=None):
                                           str(variation.grow_parents) + '\n')
                     parameters_file.write('        merge_cutoff: ' +
                                           str(variation.merge_cutoff) + '\n')
+                    parameters_file.write('        halve_offspring_prob' +
+                                    str(variation.halve_offspring_prob) + '\n')
+                    parameters_file.write('        reduce_both_interfaces' +
+                                str(variation.reduce_both_interfaces) + '\n')
 
                 elif variation.name == 'structure mutation':
                     parameters_file.write('    StructureMut: \n')
@@ -217,7 +222,7 @@ def print_parameters(objects_dict, lat_match_dict=None):
         parameters_file.write('    max_num_atoms: ' +
                               str(constraints.max_num_atoms) + '\n')
         parameters_file.write('    max_interface_atoms: ' +
-                              str(constraints.max_interface_atoms) + '\n')                      
+                              str(constraints.max_interface_atoms) + '\n')
         parameters_file.write('    min_lattice_length: ' +
                               str(constraints.min_lattice_length) + '\n')
         parameters_file.write('    max_lattice_length: ' +
@@ -258,11 +263,20 @@ def print_parameters(objects_dict, lat_match_dict=None):
             parameters_file.write('\n')
 
             # write user-provided substrate calculation details
-            parameters_file.write('Substrate_prim_calc: \n')
+            parameters_file.write('Substrate: \n')
             parameters_file.write('    E_sub_prim: ' +
                                   str(lat_match_dict['E_sub_prim']) + '\n')
             parameters_file.write('    n_sub_prim: ' +
                                   str(lat_match_dict['n_sub_prim']) + '\n')
+            parameters_file.write('    mu_A:' +
+                                  str(lat_match_dict['mu_A']) + '\n')
+            if 'mu_B' in lat_match_dict:
+                parameters_file.write('    mu_B:' +
+                                  str(lat_match_dict['mu_B']) + '\n')
+            if 'mu_C' in lat_match_dict:
+                parameters_file.write('    mu_C:' +
+                                  str(lat_match_dict['mu_C']) + '\n')
+
             parameters_file.write('\n')
 
         # write the redundancy guard info
@@ -304,4 +318,20 @@ def print_parameters(objects_dict, lat_match_dict=None):
             parameters_file.write('    found_structure: ' +
                                   stopping_criteria.path_to_structure_file +
                                   '\n')
+        parameters_file.write('\n')
+
+        # write the job_specs of the dask-worker including defaults (if any)
+        parameters_file.write('job_specs: \n')
+        parameters_file.write('    cores: ' + str(job_specs['cores']) + '\n')
+        parameters_file.write('    memory: ' + job_specs['memory'] + '\n')
+        parameters_file.write('    project: ' + job_specs['project'] + '\n')
+        parameters_file.write('    queue: ' + job_specs['queue'] + '\n')
+        parameters_file.write('    walltime: ' + job_specs['walltime'] + '\n')
+        parameters_file.write('    interface: ' + job_specs['interface'] + '\n')
+        if 'job_extra' in job_specs:
+            parameters_file.write('    job_extra: \n')
+            for i in range(len(job_specs['job_extra'])):
+                parameters_file.write('        - %r \n' % str(
+                                            job_specs['job_extra'][i]))
+
         parameters_file.write('\n')
