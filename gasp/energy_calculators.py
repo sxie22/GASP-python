@@ -66,24 +66,31 @@ class VaspEnergyCalculator(object):
         self.kpoints_file = kpoints_file
         self.potcar_files = potcar_files
 
-    def do_energy_calculation(self, organism, dictionary, key,
+    def do_energy_calculation(self, organism,
                               composition_space, E_sub_prim=None,
                               n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0,
                               no_z=False):
         """
-        Calculates the energy of an organism using VASP, and stores the relaxed
-        organism in the provided dictionary at the provided key. If the
-        calculation fails, stores None in the dictionary instead.
+        Calculates the energy of an organism using VASP, and returns the relaxed
+        organism. If the calculation fails, returns None.
 
         Args:
             organism: the Organism whose energy we want to calculate
 
-            dictionary: a dictionary in which to store the relaxed Organism
-
-            key: the key specifying where to store the relaxed Organism in the
-                dictionary
-
             composition_space: the CompositionSpace of the search
+
+            E_sub_prim (float): (interface geometry only) total energy of
+            primitive substrate slab
+
+            n_sub_prim (float): (interface geometry only) number of layers of
+            atoms in primitive substrate slab
+
+            mu_A, mu_B, mu_C (floats): (interface geometry only) Chemical
+            potentials of species A, B, C (ordered based on increasing
+            electronegativities)
+
+            no_z (bool): (interface geometry only) Whether to relax z
+            coordinates of structures
 
         Precondition: the garun directory and temp subdirectory exist, and we
             are currently located inside the garun directory
@@ -135,8 +142,7 @@ class VaspEnergyCalculator(object):
                             stderr=devnull)
         except:
             print('Error running VASP on organism {} '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # parse the relaxed structure from the CONTCAR file
         try:
@@ -144,8 +150,7 @@ class VaspEnergyCalculator(object):
         except:
             print('Error reading structure of organism {} from CONTCAR '
                   'file '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # check if the VASP calculation converged
         converged = False
@@ -157,8 +162,7 @@ class VaspEnergyCalculator(object):
         if not converged:
             print('VASP relaxation of organism {} did not converge '.format(
                 organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # parse the internal energy and pV (if needed) and compute the enthalpy
         pv = 0
@@ -232,7 +236,19 @@ class VaspEnergyCalculator(object):
 
     def write_poscar(self, iface, n_sub, sd_index, job_dir_path, no_z=False):
         '''
-        Returns POSCAR of the interface with sd flags and comment line
+        Writes POSCAR of the interface with sd flags and comment line in job dir
+
+        Args:
+            iface: (obj) interface structure for which Poscar is to be written
+
+            n_sub: (int) number of substrate atoms in interface
+
+            sd_index: (int) index of coordinate above which sd_flags would be
+                        True
+
+            job_dir_path: Path of job submit directory
+
+            no_z: (bool) whether to relax sd_flags of z-coordinates
 
         '''
         n_iface = iface.num_sites
@@ -278,24 +294,30 @@ class LammpsEnergyCalculator(object):
         # the path to the lammps input script
         self.input_script = input_script
 
-    def do_energy_calculation(self, organism, dictionary, key,
+    def do_energy_calculation(self, organism,
                               composition_space, E_sub_prim=None,
                               n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0,
                               no_z=False):
         """
-        Calculates the energy of an organism using LAMMPS, and stores the
-        relaxed organism in the provided dictionary at the provided key. If the
-        calculation fails, stores None in the dictionary instead.
+        Calculates the energy of an organism using LAMMPS, and returns the
+        relaxed organism. If the calculation fails, returns None.
 
         Args:
             organism: the Organism whose energy we want to calculate
 
-            dictionary: a dictionary in which to store the relaxed Organism
-
-            key: the key specifying where to store the relaxed Organism in the
-                dictionary
-
             composition_space: the CompositionSpace of the search
+
+            E_sub_prim (float): (interface geometry only) total energy of
+            primitive substrate slab
+
+            n_sub_prim (float): (interface geometry only) number of layers of
+            atoms in primitive substrate slab
+
+            mu_A, mu_B, mu_C (floats): (interface geometry only) Chemical
+            potentials of species A, B, C (ordered based on increasing
+            electronegativities)
+
+            no_z: (bool) whether to relax sd_flags of z-coordinates
 
         Precondition: the garun directory and temp subdirectory exist, and we
             are currently located inside the garun directory
@@ -339,8 +361,7 @@ class LammpsEnergyCalculator(object):
             with open(job_dir_path + '/log.lammps', 'w') as log_file:
                 log_file.write(e.output.decode('utf-8'))
             print('Error running LAMMPS on organism {} '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # write the LAMMPS output
         with open(job_dir_path + '/log.lammps', 'w') as log_file:
@@ -358,8 +379,7 @@ class LammpsEnergyCalculator(object):
         except:
             print('Error reading structure of organism {} from LAMMPS '
                   'output '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # parse the total energy from the log.lammps file
         try:
@@ -367,8 +387,7 @@ class LammpsEnergyCalculator(object):
         except:
             print('Error reading energy of organism {} from LAMMPS '
                   'output '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # check that the total energy isn't unphysically large
         # (can be a problem for empirical potentials)
@@ -376,8 +395,7 @@ class LammpsEnergyCalculator(object):
         if epa < -50:
             print('Discarding organism {} due to unphysically large energy: '
                   '{} eV/atom.'.format(organism.id, str(epa)))
-            dictionary[key] = None
-            return
+            return None
 
         organism.cell = relaxed_cell
         organism.total_energy = total_energy
@@ -649,7 +667,19 @@ class LammpsEnergyCalculator(object):
 
     def write_poscar(self, iface, n_sub, sd_index, job_dir_path):
         '''
-        Returns POSCAR of the interface with sd flags and comment line
+        Writes POSCAR of the interface with sd flags and comment line in job dir
+
+        Args:
+            iface: (obj) interface structure for which Poscar is to be written
+
+            n_sub: (int) number of substrate atoms in interface
+
+            sd_index: (int) index of coordinate above which sd_flags would be
+                        True
+
+            job_dir_path: Path of job submit directory
+
+            no_z: (bool) whether to relax sd_flags of z-coordinates
 
         '''
         n_iface = iface.num_sites
@@ -659,6 +689,10 @@ class LammpsEnergyCalculator(object):
         sd_frozen = np.zeros((sd_index + 1, 3))
         sd_relax = np.ones((n_iface - sd_index -1, 3))
         sd_flags = np.concatenate((sd_frozen, sd_relax))
+        # If do not want atoms to relax in z-direction
+        if no_z is True:
+            sd_flags[:, 2] = np.zeros(len(sd_flags))
+            
         #sd_flags = np.zeros_like(iface.frac_coords)
         #z_coords_iface = iface.frac_coords[:, 2]
         #sd_flags[np.where(z_coords_iface >= sd_index)] = np.ones((1, 3))
@@ -750,20 +784,13 @@ class GulpEnergyCalculator(object):
                 cations_shell = True
         return anions_shell, cations_shell
 
-    def do_energy_calculation(self, organism, dictionary, key,
-                        composition_space, E_sub_prim=None, n_sub_prim=None):
+    def do_energy_calculation(self, organism, composition_space):
         """
-        Calculates the energy of an organism using GULP, and stores the relaxed
-        organism in the provided dictionary at the provided key. If the
-        calculation fails, stores None in the dictionary instead.
+        Calculates the energy of an organism using GULP, and returns the relaxed
+        organism. If the calculation fails, returns None.
 
         Args:
             organism: the Organism whose energy we want to calculate
-
-            dictionary: a dictionary in which to store the relaxed Organism
-
-            key: the key specifying where to store the relaxed Organism in the
-                dictionary
 
             composition_space: the CompositionSpace of the search
 
@@ -798,8 +825,7 @@ class GulpEnergyCalculator(object):
                       'w') as gout_file:
                 gout_file.write(e.output.decode('utf-8'))
             print('Error running GULP on organism {} '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # write the GULP output for the user's reference
         with open(job_dir_path + '/' + str(organism.id) + '.gout',
@@ -812,8 +838,7 @@ class GulpEnergyCalculator(object):
         if conv_err_string in gulp_output and gradient_norm > 0.1:
             print('The GULP calculation on organism {} did not '
                   'converge '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # parse the relaxed structure from the gulp output
         try:
@@ -822,8 +847,7 @@ class GulpEnergyCalculator(object):
         except:
             print('Error reading structure of organism {} from GULP '
                   'output '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # parse the total energy from the gulp output
         try:
@@ -831,8 +855,7 @@ class GulpEnergyCalculator(object):
         except:
             print('Error reading energy of organism {} from GULP '
                   'output '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # sometimes gulp takes a supercell
         num_atoms = self.get_num_atoms(gulp_output)
@@ -842,7 +865,7 @@ class GulpEnergyCalculator(object):
         organism.total_energy = organism.epa*organism.cell.num_sites
         print('Setting energy of organism {} to {} eV/atom '.format(
             organism.id, organism.epa))
-        dictionary[key] = organism
+        return organism
 
     def write_input_file(self, organism, gin_path):
         """
