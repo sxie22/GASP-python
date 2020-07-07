@@ -61,8 +61,7 @@ if substrate_search:
             print ('Quitting...')
             quit()
     lat_match_dict = match_constraints
-    lat_match_dict['E_sub_prim'] = substrate_params['E_sub_prim']
-    lat_match_dict['n_sub_prim'] = substrate_params['n_sub_prim']
+    lat_match_dict.update(substrate_params)
     # Parse the primitve substrate structure from input argument
     sub_cell = general.Cell.from_file('POSCAR_sub')
     # make it conventional_standard_structure using pymatgen to avoid issues
