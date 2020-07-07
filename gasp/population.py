@@ -50,6 +50,8 @@ class InitialPopulation():
 
         Args:
             organism_to_add: the Organism to add to the initial population
+
+            composition_space: the CompositionSpace of the search
         """
 
         organism_to_add.cell.sort()
@@ -70,6 +72,8 @@ class InitialPopulation():
             old_org: the Organism in the initial population to replace
 
             new_org: the new Organism to replace the old one
+
+            composition_space: the CompositionSpace of the search
         """
 
         new_org.cell.sort()
@@ -447,6 +451,8 @@ class Pool(object):
             old_org: the Organism in the pool to replace
 
             new_org: the new Organism to replace the old one
+
+            composition_space: the CompositionSpace of the search
         """
 
         print('Replacing organism {} with organism {} in the pool '.format(
@@ -809,6 +815,8 @@ class Pool(object):
         """
         Prints out the area or volume of the convex hull defined by the
         organisms in the promotion set.
+
+        composition_space: the CompositionSpace of the search
         """
 
         # make a phase diagram of just the organisms in the promotion set

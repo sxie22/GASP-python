@@ -357,6 +357,8 @@ class Wire(object):
         Args:
             cell: the Cell to unpad
 
+            n_sub: number of substrate atoms in the interface structure
+
             constraints: the Constraints of the search
         '''
 
@@ -546,6 +548,8 @@ class Cluster(object):
         Args:
             cell: the Cell to unpad
 
+            n_sub: number of substrate atoms in the interface structure
+
             constraints: the Constraints of the search
         '''
 
@@ -729,6 +733,8 @@ class Substrate_2D(object):
 
         Args:
             cell: the Cell object of interface structure
+
+            n_sub: number of substrate atoms in the interface structure
 
             constraints: the Constraints of the search
         '''

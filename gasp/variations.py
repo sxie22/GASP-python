@@ -527,6 +527,8 @@ class Mating(object):
 
             geometry: the Geometry of the search
 
+            constraints: the Constraints of the search
+
             random: copy of Python's built in PRNG
         """
 
@@ -781,6 +783,8 @@ class StructureMut(object):
 
             geometry: the Geometry of the search
 
+            constraints: the Constraints of the search
+
             id_generator: the IDGenerator used to assign id numbers to all
                 organisms
 
@@ -995,6 +999,8 @@ class NumAtomsMut(object):
             random: a copy of Python's built in PRNG
 
             geometry: the Geometry of the search
+
+            constraints: the Constraints of the search
 
             id_generator: the IDGenerator used to assign id numbers to all
                 organisms
@@ -1290,6 +1296,8 @@ class Permutation(object):
             random: a copy of Python's built in PRNG
 
             geometry: the Geometry of the search
+
+            constraints: the Constraints of the search
 
             id_generator: the IDGenerator used to assign id numbers to all
                 organisms

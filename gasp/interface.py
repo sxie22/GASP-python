@@ -58,6 +58,11 @@ def get_uv(ab, t_mat):
     """
     Return u and v, the supercell lattice vectors obtained through the
     transformation matrix
+
+    Args:
+        ab: the a, b lattice vectors
+
+        t_mat: transformation matrices
     """
     u = np.array(ab[0]) * t_mat[0][0] + np.array(ab[1]) * t_mat[0][1]
     v = np.array(ab[1]) * t_mat[1][1]
@@ -67,6 +72,11 @@ def get_uv(ab, t_mat):
 def get_reduced_uv(uv, tm):
     """
     Returns reduced lattice vectors
+
+    Args:
+        uv: a, b lattice vectors
+
+        tm:  transformation matrix
     """
     is_not_reduced = True
     u = np.array(uv[0])
@@ -101,6 +111,11 @@ def reduced_supercell_vectors(ab, n):
     Returns all possible reduced in-plane lattice vectors and
     transition matrices for the given starting unit cell lattice
     vectors(ab) and the supercell size n
+
+    Args:
+        ab: a, b lattice vectors
+
+        n: (int) supercell size
     """
     uv_list = []
     tm_list = []
@@ -119,6 +134,16 @@ def get_r_list(area1, area2, max_area, tol=0.02):
     r1 <= Area_max/area1 and r2 <= Area_max/area2
     r1 and r2 corresponds to the supercell sizes of the 2 interfaces
     that align them
+
+    Args:
+        area1: area of cell 1
+
+        area2: area of cell 2
+
+        max_area: maximum alowed area for lattice match
+
+        tol: ratio tolerance between areas
+
     """
     r_list = []
     rmax1 = int(max_area / area1)
@@ -170,6 +195,11 @@ def get_area(uv):
 def remove_duplicates(uv_list, tm_list):
     """
     Remove duplicates based on a, b, alpha matching.
+
+    Args:
+        uv_list: the uv lattice vectors of a matched lattice
+
+        tm_list: transfomation matrix list for the uv list
     """
     new_uv_list = []
     new_tm_list = []
@@ -192,12 +222,17 @@ def remove_duplicates(uv_list, tm_list):
 
 def get_matching_lattices(iface1, iface2, max_area=100,
                           max_mismatch=0.01, max_angle_diff=1,
-                          r1r2_tol=0.02, opt=False, write_all_matches=False):
-## This function gives: "return uv_opt[0], uv_opt[1]"
-
+                          r1r2_tol=0.02):
     """
     computes a list of matching reduced lattice vectors that satify
     the max_area, max_mismatch and max_anglele_diff criteria
+
+    Args:
+        iface1: cell1 to be lattice matched
+
+        iface2: cell2 to be latttice matched to cell1
+
+        kwargs from run_lat_match()
     """
     if iface1 is None and iface2 is None:
         # test : the numbers from the paper
@@ -279,6 +314,8 @@ def get_matching_lattices(iface1, iface2, max_area=100,
 
         # uv_all is written to a dictionary
         matches_dict = {}
+        #TODO: update write_all_matches part
+        write_all_matches = False
         if write_all_matches:
             n_matches = len(uv_all)
             for i in range(n_matches):
@@ -316,7 +353,9 @@ def get_uniq_layercoords(struct, nlayers, top=True):
     nlayers of the given structure.
     Args:
         struct: input structure
+
         nlayers: number of layers
+
         top: top or bottom layers, default is top layer
     Return:
         numpy array of unique coordinates
@@ -356,9 +395,13 @@ def get_interface(substrate, mat2d, nlayers_2d=2, nlayers_substrate=2,
     interfaces and writes the corresponding poscar files
     Args:
         mat2d: Lattice and symmetry-matched 2D material structure
+
         substrate: Lattice and symmetry-matched 2D substrate structure
+
         nlayers_substrate: number of substrate layers
+
         nlayers_2d: number of 2d material layers
+
         separation: separation between the substrate and the 2d
                     material
     Returns:
@@ -499,9 +542,16 @@ def run_lat_match(substrate, twod_layer, match_constraints):
 
         match_constraints - dictionary containing max area, max mismatch of u
         or v, max angle difference, area ratio tolerence, seperation at the
-        interface, number of layers for substrate and 2D. Ex: {'max_area':200,
-        'max_mismatch':0.05, 'max_angle_diff':2, 'r1r2_tol':0.06, 'separation':
-        3, 'nlayers_substrate':1, 'nlayers_2d':1, 'sd_layers':1}
+        interface, number of layers for substrate and 2D.
+
+        Ex: {'max_area':200,
+            'max_mismatch':0.05,
+            'max_angle_diff':2,
+            'r1r2_tol':0.06,
+            'separation': 3,
+            'nlayers_substrate':1,
+            'nlayers_2d':1,
+            'sd_layers':1}
     '''
     # variables from the keys
     max_area = match_constraints['max_area']

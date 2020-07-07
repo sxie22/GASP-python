@@ -512,6 +512,8 @@ class Developer(object):
             organism: the Organism whose cell to Niggli reduce
 
             geometry: the Geometry of the search
+
+            constraints: the Constraints of the search
         """
 
         if geometry.shape == 'bulk':
@@ -731,6 +733,8 @@ class Developer(object):
             organism: the Organism to check
 
             constraints: the Constraints of the search
+
+            pre_dev: (bool) Specify whether the development is pre- or post-
         """
         if pre_dev and organism.cell.num_sites > 1:
             # delete duplicate sites

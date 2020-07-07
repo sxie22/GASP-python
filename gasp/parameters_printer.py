@@ -24,6 +24,9 @@ def print_parameters(objects_dict, lat_match_dict=None):
     Args:
         objects_dict: a dictionary of objects used by the algorithm, as
             returned by the make_objects method
+
+        lat_match_dict: a dictionary with all the lattice match parameters and
+            substrate parameters (for interface geometry only)
     """
 
     # get all the objects from the dictionary

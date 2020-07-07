@@ -628,6 +628,8 @@ class CompositionSpace(object):
 
         Args:
             endpoints: the list of compositions, as strings (e.g., ["Al2O3"])
+
+            sub_search (bool): whether it is a interface geometry
         """
 
         for i in range(len(endpoints)):
@@ -951,6 +953,8 @@ class DataWriter(object):
             to be written
 
             composition_space: the CompositionSpace of the search
+
+            sub_search (bool): whether it is interface geometry search
         """
 
         self.file_path = garun_dir + '/run_data'
