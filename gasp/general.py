@@ -402,7 +402,7 @@ class Cell(Structure):
         successful_reduction = self.reduce_cell()
 
         # unpad the reduced cell
-        geometry.unpad(self, constraints)
+        geometry.unpad(self, "", constraints)
 
         return successful_reduction
 

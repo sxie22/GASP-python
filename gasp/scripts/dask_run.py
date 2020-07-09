@@ -59,6 +59,7 @@ def main():
     E_sub_prim, n_sub_prim, mu_A, mu_B, mu_C = None, None, None, None, None
     lat_match_dict = None
     substrate_search = False
+    substrate_params = {}
     if geometry.shape == 'interface':
         substrate_search = True
 
