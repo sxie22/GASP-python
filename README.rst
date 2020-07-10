@@ -65,12 +65,12 @@ pymatgen recommends using the gcc compiler. To do so, type::
 
 Install numpy, scipy, matplotlib and pymatgen with pip::
 
-    pip install numpy
-    pip install scipy
-    pip install matplotlib
-    pip install pymatgen
+    conda install -c conda-forge numpy
+    conda install -c conda-forge scipy
+    conda install -c conda-forge matplotlib
+    conda install -c conda-forge pymatgen
 
-When searching for clusters and wires, GASP uses features of pymatgen that depend on openbabel. So if you plan to use GASP to search for clusters or wires, install openbabel in your conda environment::
+When searching for clusters and wires, GASP uses features of pymatgen that depend on openbabel. So if you plan to use GASP to search for clusters or wires, install openbabel in your conda environment (recommended)::
 
    conda install -c openbabel openbabel
 
