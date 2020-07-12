@@ -188,6 +188,7 @@ See [here](#lammps) for a description and example of a LAMMPS input script.
 ~~~~
     EnergyCode:
         vasp:
+            max_submits: <int>
             incar: <string>
             kpoints: <string>
             potcars:
@@ -197,6 +198,8 @@ See [here](#lammps) for a description and example of a LAMMPS input script.
 ~~~~
 
 The **vasp** keyword specifies that VASP will be used for the energy calculations, and the **incar**, **kpoints** and **potcars** keywords must appear on the subsequent lines.
+
+The **max_submits** keyword specifies maximum number of VASP calculations to run on an organism. That is, if an VASP calculation is not converged, the organism is resubmitted (**max_submits** - 1) times before discarding the organism. Optional, default is 2.
 
 The **incar** keyword is followed by the path to the INCAR file to use for all the VASP calculations submitted by the algorithm.
 
@@ -989,27 +992,27 @@ The **job_specs** keyword specifies the details of the cluster (SLURM/PBS) job t
 
    * **cores**
 
-Specifies the number of cpus_per_task. Optional, default is 1
+Specifies the number of cores. Analogous to *\#SBATCH \-\-cpus\-per\-task* option.. Optional, default is 1
 
    * **memory**
 
-Specifies the total memory for the worker job. Optional, default is '8GB'
+Specifies the *total memory* for the worker job. Analogous to *\#SBATCH \-\-mem* option. Optional, default is '8GB'
 
    * **project**
 
-Specifies the project name to request job on scheduler. This is mandatory.
+Specifies the project name/id on the cluster to submit job on scheduler. Analogous to *\#SBATCH \-A* option. This is mandatory.
 
    * **queue**
 
-Specifies the queue name for the job on scheduler. This is mandatory.
+Specifies the queue name for the job on scheduler. Analogous to *\#SBATCH \-p* option. This is mandatory.
 
    * **walltime**
 
-Specifies the total walltime for the job. This should be large enough that spans over the entire GASP runtime. Default is '24:00:00'
+Specifies the total walltime for the job. This should be large enough that spans over the entire GASP runtime. Analogous to *\#SBATCH \-t* option. Default is '24:00:00'
 
    * **interface**
 
-Specifies the type of node. Default is 'ib0'
+Specifies the type of node (infiniband, haswell etc). Default is 'ib0'
 
    * **job_extra**
 

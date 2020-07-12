@@ -744,8 +744,16 @@ def make_vasp_energy_calculator(parameters, composition_space, geometry):
                     print('Quitting...')
                     quit()
 
+        # check if max_submits is provided
+        if 'max_submits' in parameters['EnergyCode']['vasp']:
+            max_submits = parameters['EnergyCode']['vasp']['max_submits']
+        else:
+            print ('No "max_submits" option given. Using default value of 2,'
+                   ' max VASP calculations done on an organism to converge.')
+            max_submits = 2
         return energy_calculators.VaspEnergyCalculator(
-                incar_path, kpoints_path, potcar_paths, geometry)
+                                    incar_path, kpoints_path, potcar_paths,
+                                    geometry, max_submits=max_submits)
 
 
 def make_stopping_criteria(parameters, composition_space):

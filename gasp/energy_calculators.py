@@ -44,7 +44,8 @@ class VaspEnergyCalculator(object):
     Calculates the energy of an organism using VASP.
     """
 
-    def __init__(self, incar_file, kpoints_file, potcar_files, geometry):
+    def __init__(self, incar_file, kpoints_file, potcar_files, geometry,
+                max_submits=2):
         '''
         Makes a VaspEnergyCalculator.
 
@@ -65,6 +66,9 @@ class VaspEnergyCalculator(object):
         self.incar_file = incar_file
         self.kpoints_file = kpoints_file
         self.potcar_files = potcar_files
+
+        # max number of times to submit an organism to relax
+        self.max_submits = max_submits
 
     def do_energy_calculation(self, organism,
                               composition_space, E_sub_prim=None,
@@ -136,12 +140,31 @@ class VaspEnergyCalculator(object):
 
         # run 'callvasp' script as a subprocess to run VASP
         print('Starting VASP calculation on organism {} '.format(organism.id))
-        devnull = open(os.devnull, 'w')
-        try:
-            subprocess.call(['callvasp', job_dir_path], stdout=devnull,
-                            stderr=devnull)
-        except:
-            print('Error running VASP on organism {} '.format(organism.id))
+        for i in range(self.max_submits):
+            devnull = open(os.devnull, 'w')
+            try:
+                subprocess.call(['callvasp', job_dir_path], stdout=devnull,
+                                stderr=devnull)
+            except:
+                print('Error running VASP on organism {} '.format(organism.id))
+                return None
+
+            # check if the VASP calculation converged
+            converged = False
+            with open(job_dir_path + '/OUTCAR') as f:
+                for line in f:
+                    if 'reached' in line and 'required' in line and \
+                            'accuracy' in line:
+                        converged = True
+            if converged:
+                break
+            else:
+                self.rearrange_files(i)
+                continue
+
+        if not converged:
+            print('VASP relaxation of organism {} did not converge '.format(
+                    organism.id))
             return None
 
         # parse the relaxed structure from the CONTCAR file
@@ -150,18 +173,6 @@ class VaspEnergyCalculator(object):
         except:
             print('Error reading structure of organism {} from CONTCAR '
                   'file '.format(organism.id))
-            return None
-
-        # check if the VASP calculation converged
-        converged = False
-        with open(job_dir_path + '/OUTCAR') as f:
-            for line in f:
-                if 'reached' in line and 'required' in line and \
-                        'accuracy' in line:
-                    converged = True
-        if not converged:
-            print('VASP relaxation of organism {} did not converge '.format(
-                organism.id))
             return None
 
         # parse the internal energy and pV (if needed) and compute the enthalpy
@@ -270,6 +281,24 @@ class VaspEnergyCalculator(object):
             new_sd.append([bool(x) for x in i])
         poscar = Poscar(iface, comment, selective_dynamics=new_sd)
         poscar.write_file(filename=job_dir_path + '/POSCAR')
+
+    def rearrange_files(self, i):
+        """
+        Rename the CONTCAR to POSCAR
+        Save output files with index
+
+        Args:
+
+        i (int): index of the vasp submit
+        """
+        os.rename('POSCAR', 'POSCAR_{}'.format(i))
+        os.rename('CONTCAR', 'POSCAR')
+
+        os.rename('OSZICAR', 'OSZICAR_{}'.format(i))
+        os.rename('OUTCAR', 'OUTCAR_{}'.format(i))
+        # Add any other outputs to save here before resubmitting
+        os.remove('WAVECAR')
+        os.remove('CHGCAR')
 
 
 class LammpsEnergyCalculator(object):
