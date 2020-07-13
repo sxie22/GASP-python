@@ -159,8 +159,8 @@ class VaspEnergyCalculator(object):
             if converged:
                 break
             else:
-                self.rearrange_files(i, job_dir_path)
-                continue
+                if not i == self.max_submits - 1:
+                    self.rearrange_files(i+1, job_dir_path)
 
         if not converged:
             print('VASP relaxation of organism {} did not converge '.format(
@@ -293,15 +293,14 @@ class VaspEnergyCalculator(object):
 
         job_dir_path (str): path to vasp job directory
         """
-        with os.chdir(job_dir_path):
-            os.rename('POSCAR', 'POSCAR_{}'.format(i))
-            os.rename('CONTCAR', 'POSCAR')
+        os.rename(job_dir_path+'/POSCAR', job_dir_path+'/POSCAR_{}'.format(i))
+        os.rename(job_dir_path+'/CONTCAR', job_dir_path+'/POSCAR')
 
-            os.rename('OSZICAR', 'OSZICAR_{}'.format(i))
-            os.rename('OUTCAR', 'OUTCAR_{}'.format(i))
-            # Add any other outputs to save here before resubmitting
-            os.remove('WAVECAR')
-            os.remove('CHGCAR')
+        os.rename(job_dir_path+'/OSZICAR', job_dir_path+'/OSZICAR_{}'.format(i))
+        os.rename(job_dir_path+'/OUTCAR', job_dir_path+'/OUTCAR_{}'.format(i))
+        # Add any other outputs to save here before resubmitting
+        os.remove(job_dir_path+'/WAVECAR')
+        os.remove(job_dir_path+'/CHGCAR')
 
 
 class LammpsEnergyCalculator(object):
