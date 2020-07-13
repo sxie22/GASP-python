@@ -159,7 +159,7 @@ class VaspEnergyCalculator(object):
             if converged:
                 break
             else:
-                self.rearrange_files(i)
+                self.rearrange_files(i, job_dir_path)
                 continue
 
         if not converged:
@@ -282,7 +282,7 @@ class VaspEnergyCalculator(object):
         poscar = Poscar(iface, comment, selective_dynamics=new_sd)
         poscar.write_file(filename=job_dir_path + '/POSCAR')
 
-    def rearrange_files(self, i):
+    def rearrange_files(self, i, job_dir_path):
         """
         Rename the CONTCAR to POSCAR
         Save output files with index
@@ -290,15 +290,18 @@ class VaspEnergyCalculator(object):
         Args:
 
         i (int): index of the vasp submit
-        """
-        os.rename('POSCAR', 'POSCAR_{}'.format(i))
-        os.rename('CONTCAR', 'POSCAR')
 
-        os.rename('OSZICAR', 'OSZICAR_{}'.format(i))
-        os.rename('OUTCAR', 'OUTCAR_{}'.format(i))
-        # Add any other outputs to save here before resubmitting
-        os.remove('WAVECAR')
-        os.remove('CHGCAR')
+        job_dir_path (str): path to vasp job directory
+        """
+        with os.chdir(job_dir_path):
+            os.rename('POSCAR', 'POSCAR_{}'.format(i))
+            os.rename('CONTCAR', 'POSCAR')
+
+            os.rename('OSZICAR', 'OSZICAR_{}'.format(i))
+            os.rename('OUTCAR', 'OUTCAR_{}'.format(i))
+            # Add any other outputs to save here before resubmitting
+            os.remove('WAVECAR')
+            os.remove('CHGCAR')
 
 
 class LammpsEnergyCalculator(object):

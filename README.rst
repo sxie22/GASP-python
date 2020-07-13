@@ -2,7 +2,7 @@ GASP is a genetic algorithm for structure and phase prediction written in Python
 
 .. _VASP: http://www.vasp.at/
 .. _LAMMPS: http://lammps.sandia.gov/
-.. _GULP: https://gulp.curtin.edu.au/gulp/ 
+.. _GULP: https://gulp.curtin.edu.au/gulp/
 
 
 Getting GASP
@@ -11,17 +11,17 @@ It is easiest to install GASP and all its dependencies into a conda_ environment
 
 If pymatgen is already installed, steps 1-3 may be skipped.
 
-.. _conda: http://conda.pydata.org/docs/index.html 
+.. _conda: http://conda.pydata.org/docs/index.html
 .. _pymatgen: http://pymatgen.org/
 
-1. Install conda 
+1. Install conda
 ----------------
 
-Download and install the version of conda for your operating system from http://conda.pydata.org/miniconda.html. Although GASP is compatible with both Python 2.7 and 3.6, pymatgen recommends using Python 3.6. 
+Download and install the version of conda for your operating system from http://conda.pydata.org/miniconda.html. Although GASP is compatible with both Python 2.7 and 3.6, pymatgen recommends using Python 3.6.
 
-For Windows, make sure you have the Miniconda3 installer, and simply double-click the .exe file. 
+For Windows, make sure you have the Miniconda3 installer, and simply double-click the .exe file.
 
-For Mac or Linux, run the bash script::  
+For Mac or Linux, run the bash script::
 
     # if Mac
     bash Miniconda3-latest-MacOSX-x86_64.sh
@@ -56,19 +56,24 @@ Now activate the environment so that packages can be installed into it::
     activate my_gasp
 
 
-3. Install pymatgen and its dependencies 
+3. Install pymatgen and its dependencies
 ----------------------------------------
 
-pymatgen recommends using the gcc compiler. To do so, type::
+pymatgen requires using the gcc compiler. To do so, type::
 
     export CC=gcc 
 
-Install numpy, scipy, matplotlib and pymatgen with pip::
+Install numpy, scipy, matplotlib and pymatgen with conda::
 
     conda install -c conda-forge numpy
     conda install -c conda-forge scipy
     conda install -c conda-forge matplotlib
     conda install -c conda-forge pymatgen
+
+Install dask and dask_jobqueue with conda::
+
+    conda install dask
+    conda install dask-jobqueue -c conda-forge
 
 When searching for clusters and wires, GASP uses features of pymatgen that depend on openbabel. So if you plan to use GASP to search for clusters or wires, install openbabel in your conda environment (recommended)::
 
@@ -76,11 +81,11 @@ When searching for clusters and wires, GASP uses features of pymatgen that depen
 
 For Mac, an additional step is needed in order to use the scripts included with GASP for making plots. These scripts depend on the matplotlib_ library, which requires a framework build of Python to run properly on Mac OS X. However, a regular Python build comes with conda by default. To install a framework build in your conda environment, type::
 
-    conda install python.app  
+    conda install python.app
 
 See the 'Visualizing output' section of the the `usage file`_ for more information on making plots.
 
-.. _matplotlib: http://matplotlib.org/index.html 
+.. _matplotlib: http://matplotlib.org/index.html
 
 
 4. Install GASP-python
@@ -141,4 +146,4 @@ Benjamin Revard
 
 Venkata Surya Chaitanya Kolluru
 
-Richard G. Hennig    
+Richard G. Hennig
