@@ -17,7 +17,21 @@ If pymatgen is already installed, steps 1-3 may be skipped.
 1. Install conda
 ----------------
 
-Download and install the version of conda for your operating system from http://conda.pydata.org/miniconda.html. Although GASP is compatible with both Python 2.7 and 3.6, pymatgen recommends using Python 3.6.
+Many computing clusters have Anaconda installed which shall be loaded as -
+
+    module load conda
+
+or in some clusters it is
+
+    module load python
+
+Check if conda is loaded by
+
+    conda info --envs
+
+which shows all conda environments (if conda is loaded successfully).
+
+If conda command not found, download and install the latest version of conda for your operating system from http://conda.pydata.org/miniconda.html. Although GASP is compatible with both Python 2.7 and 3.6, pymatgen recommends using Python >=3.6.
 
 For Windows, make sure you have the Miniconda3 installer, and simply double-click the .exe file.
 
@@ -39,7 +53,7 @@ After completing the installation, create a new terminal in order for the enviro
 
 To create a new conda environment named 'my_gasp', type::
 
-    conda create --name my_gasp python=3.6
+    conda create --name my_gasp python=3.7
 
 When conda asks you::
 
@@ -61,19 +75,15 @@ Now activate the environment so that packages can be installed into it::
 
 pymatgen requires using the gcc compiler. To do so, type::
 
-    export CC=gcc 
+    export CC=gcc
 
-Install numpy, scipy, matplotlib and pymatgen with conda::
+Install pymatgen, which also installs other required dependencies - numpy, scipy, matplotlib with pip::
 
-    conda install -c conda-forge numpy
-    conda install -c conda-forge scipy
-    conda install -c conda-forge matplotlib
-    conda install -c conda-forge pymatgen
+    pip install pymatgen
 
 Install dask and dask_jobqueue with conda::
 
-    conda install dask
-    conda install dask-jobqueue -c conda-forge
+    conda install -c conda-forge dask dask-jobqueue
 
 When searching for clusters and wires, GASP uses features of pymatgen that depend on openbabel. So if you plan to use GASP to search for clusters or wires, install openbabel in your conda environment (recommended)::
 

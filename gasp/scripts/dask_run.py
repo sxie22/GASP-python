@@ -33,6 +33,11 @@ from time import sleep
 from dask_jobqueue import SLURMCluster
 from dask.distributed import Client
 
+# change worker unresponsive time to 3h (Assuming max elapsed time for one calc)
+import dask
+import dask.distributed
+dask.config.set({'distributed.comm.timeouts.tcp': '3h'})
+
 def main():
     # get dictionaries from the input file (in yaml format)
     if len(sys.argv) < 2:
