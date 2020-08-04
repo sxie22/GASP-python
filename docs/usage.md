@@ -675,6 +675,7 @@ Constraints:
     max_interface_atoms: <integer>
     min_lattice_length: <float>
     max_lattice_length: <float>
+    max_scell_lattice_length: <float>
     min_lattice_angle: <float>
     max_lattice_angle: <float>
     allow_endpoints: <boolean>
@@ -706,7 +707,11 @@ Specifies the minimum allowed lattice vector length. Optional, and defaults to 0
 
   * **max_lattice_length**
 
-Specifies the maximum allowed lattice vector length. Optional, and defaults to 20.0.  
+Specifies the maximum allowed lattice vector length. Optional, and defaults to 20.0.
+
+  * **max_scell_lattice_length**
+
+(Applies in interface geometry) Specifies the maximum lattice length of the supercell lattice vector of interface structure made by lattice matching. Optional, and defaults to 30.0.
 
   * **min_lattice_angle**
 
@@ -732,6 +737,7 @@ Constraints:
     max_num_atoms: 50
     min_lattice_length: 0.5
     max_lattice_length: 20.0
+    max_scell_lattice_length: 30.0
     min_lattice_angle: 40.0
     max_lattice_angle: 140.0
     allow_endpoints: True

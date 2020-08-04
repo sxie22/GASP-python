@@ -232,6 +232,8 @@ def print_parameters(objects_dict, lat_match_dict=None):
                               str(constraints.min_lattice_length) + '\n')
         parameters_file.write('    max_lattice_length: ' +
                               str(constraints.max_lattice_length) + '\n')
+        parameters_file.write('    max_scell_lattice_length: ' +
+                              str(constraints.max_scell_lattice_length) + '\n')
         parameters_file.write('    min_lattice_angle: ' +
                               str(constraints.min_lattice_angle) + '\n')
         parameters_file.write('    max_lattice_angle: ' +

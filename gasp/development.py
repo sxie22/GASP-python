@@ -63,6 +63,7 @@ class Constraints(object):
         self.default_max_num_atoms = 30
         self.default_min_lattice_length = 0.5
         self.default_max_lattice_length = 20
+        self.default_max_scell_lattice_length = 30
         self.default_min_lattice_angle = 40
         self.default_max_lattice_angle = 140
         self.default_allow_endpoints = True
@@ -117,6 +118,18 @@ class Constraints(object):
             else:
                 self.max_lattice_length = \
                     constraints_parameters['max_lattice_length']
+
+            # max supercell lattice length; post_lma for substrate_search
+            if 'max_scell_lattice_length' not in constraints_parameters:
+                self.max_scell_lattice_length = \
+                                    self.default_max_scell_lattice_length
+            elif constraints_parameters['max_scell_lattice_length'] in (None,
+                                                                  'default'):
+                self.max_scell_lattice_length = \
+                                    self.default_max_scell_lattice_length
+            else:
+                self.max_scell_lattice_length = \
+                    constraints_parameters['max_scell_lattice_length']
 
             # min lattice angle
             if 'min_lattice_angle' not in constraints_parameters:
@@ -189,6 +202,7 @@ class Constraints(object):
         self.max_num_atoms = self.default_max_num_atoms
         self.min_lattice_length = self.default_min_lattice_length
         self.max_lattice_length = self.default_max_lattice_length
+        self.max_scell_lattice_length = self.default_max_scell_lattice_length
         self.min_lattice_angle = self.default_min_lattice_angle
         self.max_lattice_angle = self.default_max_lattice_angle
         self.allow_endpoints = self.default_allow_endpoints
@@ -369,7 +383,8 @@ class Developer(object):
                 return False
 
         # check the lattice length and angle constraints
-        if not self.satisfies_lattice_constraints(organism, constraints):
+        if not self.satisfies_lattice_constraints(organism, geometry,
+                                                            constraints):
             return False
 
         # check the per-species minimum interatomic distance constraints
@@ -680,7 +695,7 @@ class Developer(object):
                 return False
         return True
 
-    def satisfies_lattice_constraints(self, organism, constraints):
+    def satisfies_lattice_constraints(self, organism, geometry, constraints):
         """
         Returns a boolean indicating whether the organism satisfies the
         constraints on the lattice vector lengths and angles.
@@ -691,14 +706,17 @@ class Developer(object):
         Args:
             organism: the Organism to check
 
+            geometry: the Geometry of the search
+
             constraints: the Constraints of the search
         """
-        if organism.n_sub is not None: # post energy calculation development
-            max_length = constraints.max_lattice_length + 1
-            max_angle  = constraints.max_lattice_angle + 0.2
+        # For interface geometry offspring organisms, use scell lattice length
+        if geometry.shape == 'interface' and organism.parents is not None:
+            max_length = constraints.max_scell_lattice_length
         else:
             max_length = constraints.max_lattice_length
-            max_angle  = constraints.max_lattice_angle
+        max_angle  = constraints.max_lattice_angle
+
         # check the max and min lattice length constraints
         lengths = organism.cell.lattice.abc
         for length in lengths:
@@ -829,7 +847,7 @@ class Developer(object):
         # remove lengths of lattice vector c, because cell is now vacuum padded
         lengths = lengths[:2]
         for length in lengths:
-            if length > constraints.max_lattice_length:
+            if length > constraints.max_scell_lattice_length + 1:
                 print('Organism {} failed max lattice length '
                       'constraint, post LMA '.format(organism.id))
                 return False
