@@ -169,7 +169,8 @@ class VaspEnergyCalculator(object):
             for i in range(self.num_rerelax):
                 # start indexing the calculation after self.max_submits
                 ind = self.max_submits + i + 1
-                self.rearrange_files(self.max_submits+i+1, job_dir_path)
+                if ind > 1:
+                    self.rearrange_files(ind, job_dir_path)
                 devnull = open(os.devnull, 'w')
                 try:
                     subprocess.call(['callvasp', job_dir_path], stdout=devnull,
@@ -178,6 +179,14 @@ class VaspEnergyCalculator(object):
                     print('Error running VASP on organism {} '.format(
                                                                 organism.id))
                     return None
+
+        # check if converged again (useful when self.max_submits = 0)
+        converged = False
+        with open(job_dir_path + '/OUTCAR') as f:
+            for line in f:
+                if 'reached' in line and 'required' in line and \
+                        'accuracy' in line:
+                    converged = True
 
         if not converged:
             print('VASP relaxation of organism {} did not converge '.format(

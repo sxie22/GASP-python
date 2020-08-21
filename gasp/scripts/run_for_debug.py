@@ -35,6 +35,11 @@ import datetime
 from dask_jobqueue import SLURMCluster
 from dask.distributed import Client
 
+# change worker unresponsive time to 3h (Assuming max elapsed time for one calc)
+import dask
+import dask.distributed
+dask.config.set({'distributed.comm.timeouts.tcp': '3h'})
+
 input_file = 'ga_input.yaml'
 with open(input_file, 'r') as f:
     parameters = yaml.load(f)
@@ -48,6 +53,7 @@ geometry = objects_dict['geometry']
 E_sub_prim, n_sub_prim, mu_A, mu_B, mu_C = None, None, None, None, None
 lat_match_dict = None
 substrate_search = False
+substrate_params = {}
 if geometry.shape == 'interface':
     substrate_search = True
 

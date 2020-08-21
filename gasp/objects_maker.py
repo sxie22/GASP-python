@@ -303,7 +303,7 @@ def make_objects(parameters):
         quit()
 
     if not 'interface' in job_specs:
-        print ('Using default \'ib0\' fot interface.')
+        print ('Using default interface \'ib0\' (infiniband nodes)')
         job_specs['interface'] = 'ib0'
 
     objects_dict['job_specs'] = job_specs
@@ -751,24 +751,22 @@ def make_vasp_energy_calculator(parameters, composition_space, geometry):
                 print ('Error: Parameter max_submits should be an integer.')
                 print ('Quitting...')
                 quit()
-            else:
-                print ('All structures are submitted {} times maximum to '
-                                        'converge.'.format(max_submits))
         else:
-            print ('No "max_submits" option given. Using default value of 2,'
-                   ' max VASP calculations done on an organism to converge.')
+            print ('No "max_submits" option given. Using default maximum value'
+                   ' of 2 VASP calculations done on an organism to converge.')
             max_submits = 2
         # check if num_rerelax is provided
         num_rerelax = 0
         if 'num_rerelax' in parameters['EnergyCode']['vasp']:
             num_rerelax = parameters['EnergyCode']['vasp']['num_rerelax']
-            if isinstance(num_rerelax, int):
-                print ('All structures are re-relaxed {} times after '
-                                    'converged.'.format(num_rerelax))
-            else:
+            if not isinstance(num_rerelax, int):
                 print ('Error: Parameter num_rerelax should be an integer.')
                 print ('Quitting...')
                 quit()
+
+        print ('VASP calculations on a structure: \n'
+               'for energy convergence: {}  and\n'
+               'for (re-)relaxation: {}'.format(max_submits, num_rerelax))
 
         return energy_calculators.VaspEnergyCalculator(
                             incar_path, kpoints_path, potcar_paths, geometry,
