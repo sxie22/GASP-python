@@ -79,6 +79,8 @@ def print_parameters(objects_dict, lat_match_dict=None):
         elif energy_calculator.name == 'vasp':
             parameters_file.write('        max_submits: ' +
                                   str(energy_calculator.max_submits) + '\n')
+            parameters_file.write('        num_rerelax: ' +
+                                  str(energy_calculator.num_rerelax) + '\n')
             parameters_file.write('        incar: ' +
                                   energy_calculator.incar_file + '\n')
             parameters_file.write('        kpoints: ' +

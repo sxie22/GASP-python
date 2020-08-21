@@ -45,7 +45,7 @@ class VaspEnergyCalculator(object):
     """
 
     def __init__(self, incar_file, kpoints_file, potcar_files, geometry,
-                max_submits=2):
+                max_submits=2, num_rerelax=None):
         '''
         Makes a VaspEnergyCalculator.
 
@@ -67,8 +67,10 @@ class VaspEnergyCalculator(object):
         self.kpoints_file = kpoints_file
         self.potcar_files = potcar_files
 
-        # max number of times to submit an organism to relax
+        # max number of times to submit an organism to converge a relaxation
         self.max_submits = max_submits
+        # Number of times to submit after converged - to re-relax
+        self.num_rerelax = num_rerelax
 
     def do_energy_calculation(self, organism,
                               composition_space, E_sub_prim=None,
@@ -161,6 +163,21 @@ class VaspEnergyCalculator(object):
             else:
                 if not i == self.max_submits - 1:
                     self.rearrange_files(i+1, job_dir_path)
+
+        # check if need to re-relax the converged structure
+        if self.num_rerelax is not None:
+            for i in range(self.num_rerelax):
+                # start indexing the calculation after self.max_submits
+                ind = self.max_submits + i + 1
+                self.rearrange_files(self.max_submits+i+1, job_dir_path)
+                devnull = open(os.devnull, 'w')
+                try:
+                    subprocess.call(['callvasp', job_dir_path], stdout=devnull,
+                                    stderr=devnull)
+                except:
+                    print('Error running VASP on organism {} '.format(
+                                                                organism.id))
+                    return None
 
         if not converged:
             print('VASP relaxation of organism {} did not converge '.format(
