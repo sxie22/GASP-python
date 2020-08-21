@@ -309,6 +309,14 @@ class Mating(object):
             scaling_factors[doubling_index] = 2
             cell.make_supercell(scaling_factors)
 
+    def surface_area(self, cell):
+        """
+        Helper function
+        Calculates the surface area of the Cell
+        """
+        m = cell.lattice.matrix
+        return np.linalg.norm(np.cross(m[0], m[1]))
+
     def grow_parent_cell(self, parent_cell_1, parent_cell_2, geometry, random):
         """
         Modifies the smaller parent cell by taking supercells until it is the
@@ -322,17 +330,31 @@ class Mating(object):
             geometry: the Geometry of the search
 
             random: copy of Python's PRNG
+
+        EDIT (CK):
+        use volume_ratio in num_doubles for bulk geometry
+        use area_ratio in num_doubles for sheet geometry
+        use length_ratio in num_doubles for wire geometry
         """
 
-        vol_1 = parent_cell_1.lattice.volume
-        vol_2 = parent_cell_2.lattice.volume
-        if vol_1 < vol_2:
-            volume_ratio = vol_2/vol_1
+        if geometry.shape == 'bulk':
+            value_1 = parent_cell_1.lattice.volume
+            value_2 = parent_cell_2.lattice.volume
+        elif geometry.shape == 'sheet' or geometry.shape == 'interface':
+            value_1 = self.surface_area(parent_cell_1)
+            value_2 = self.surface_area(parent_cell_2)
+        elif geometry.shape == 'wire':
+            value_1 = parent_cell_1.lattice.c
+            value_2 = parent_cell_2.lattice.c
+
+        if value_1 < value_2:
+            value_ratio = value_2/value_1
             parent_to_grow = parent_cell_1
         else:
-            volume_ratio = vol_1/vol_2
+            value_ratio = value_1/value_2
             parent_to_grow = parent_cell_2
-        num_doubles = self.get_num_doubles(volume_ratio)
+
+        num_doubles = self.get_num_doubles(value_ratio)
         for _ in range(num_doubles):
             self.double_parent(parent_to_grow, geometry)
 
@@ -448,8 +470,7 @@ class Mating(object):
         # monotony of large area structures in newly created offspring (happens
         # as the interface search progresses.)
         if geometry.shape == 'interface':
-            m = offspring_cell.lattice.matrix
-            area = np.linalg.norm(np.cross(m[0], m[1]))
+            area = self.surface_area(offspring_cell)
             if area > 50: # hardcoded limit to protect small cells from halving
                 if random.random() < self.halve_offspring_prob:
                     offspring_cell = self.halve_offspring(offspring_cell,
@@ -681,8 +702,13 @@ class Mating(object):
 
         halved_offspring_cell = Cell(new_latt, offspring_species,
                             offspring_cart_coords, coords_are_cartesian=True)
-
-        return halved_offspring_cell
+        # Sometimes, the halved cell does not have any atoms
+        # Then return original offspring_cell
+        if halved_offspring_cell.num_sites == 0:
+            #print ('Halved offpsring cell is empty, so not halving!')
+            return offspring_cell
+        else:
+            return halved_offspring_cell
 
 class StructureMut(object):
     """
