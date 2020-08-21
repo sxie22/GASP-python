@@ -45,7 +45,7 @@ class VaspEnergyCalculator(object):
     """
 
     def __init__(self, incar_file, kpoints_file, potcar_files, geometry,
-                max_submits=2, num_rerelax=None):
+                max_submits=2, num_rerelax=0):
         '''
         Makes a VaspEnergyCalculator.
 
@@ -165,7 +165,7 @@ class VaspEnergyCalculator(object):
                     self.rearrange_files(i+1, job_dir_path)
 
         # check if need to re-relax the converged structure
-        if self.num_rerelax is not None:
+        if self.num_rerelax > 0:
             for i in range(self.num_rerelax):
                 # start indexing the calculation after self.max_submits
                 ind = self.max_submits + i + 1

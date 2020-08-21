@@ -189,6 +189,7 @@ See [here](#lammps) for a description and example of a LAMMPS input script.
     EnergyCode:
         vasp:
             max_submits: <int>
+            num_rerelax: <int>
             incar: <string>
             kpoints: <string>
             potcars:
@@ -199,7 +200,16 @@ See [here](#lammps) for a description and example of a LAMMPS input script.
 
 The **vasp** keyword specifies that VASP will be used for the energy calculations, and the **incar**, **kpoints** and **potcars** keywords must appear on the subsequent lines.
 
-The **max_submits** keyword specifies maximum number of VASP calculations to run on an organism. That is, if an VASP calculation is not converged, the organism is resubmitted (**max_submits** - 1) times before discarding the organism. Optional, default is 2.
+The **max_submits** keyword specifies maximum number of VASP calculations to run on an organism. That is, if a VASP calculation is not converged, the organism is resubmitted (**max_submits** - 1) times before discarding the organism. Optional, default is 2. The relaxation index starts from 0 to max_submits in job directory.
+
+The **num_rerelax** keyword specifies the number of times to re-relax an organism. Note that this parameter submits for re-relaxation whether or not a previous calculation is converged. This is optional, default is 0. The relaxation index starts from max_submits till num_rerelax in job directory.
+
+~~~
+To simply relax all structures n times irrespective of convergence, use
+
+max_submits: 0 # does nothing
+num_rerelax: n # submits n relaxations
+~~~
 
 The **incar** keyword is followed by the path to the INCAR file to use for all the VASP calculations submitted by the algorithm.
 
