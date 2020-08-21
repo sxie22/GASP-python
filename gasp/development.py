@@ -847,7 +847,7 @@ class Developer(object):
         # remove lengths of lattice vector c, because cell is now vacuum padded
         lengths = lengths[:2]
         for length in lengths:
-            if length > constraints.max_scell_lattice_length + 1:
+            if length > constraints.max_scell_lattice_length:
                 print('Organism {} failed max lattice length '
                       'constraint, post LMA '.format(organism.id))
                 return False
