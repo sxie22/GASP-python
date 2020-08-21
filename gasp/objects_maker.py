@@ -747,12 +747,19 @@ def make_vasp_energy_calculator(parameters, composition_space, geometry):
         # check if max_submits is provided
         if 'max_submits' in parameters['EnergyCode']['vasp']:
             max_submits = parameters['EnergyCode']['vasp']['max_submits']
+            if not isinstance(max_submits, int):
+                print ('Error: Parameter max_submits should be an integer.')
+                print ('Quitting...')
+                quit()
+            else:
+                print ('All structures are submitted {} times maximum to '
+                                        'converge.'.format(max_submits))
         else:
             print ('No "max_submits" option given. Using default value of 2,'
                    ' max VASP calculations done on an organism to converge.')
             max_submits = 2
         # check if num_rerelax is provided
-        num_rerelax=None
+        num_rerelax = 0
         if 'num_rerelax' in parameters['EnergyCode']['vasp']:
             num_rerelax = parameters['EnergyCode']['vasp']['num_rerelax']
             if isinstance(num_rerelax, int):
