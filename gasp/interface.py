@@ -347,118 +347,6 @@ def get_matching_lattices(iface1, iface2, max_area=100,
         return None, None
 
 
-def get_uniq_layercoords(struct, nlayers, top=True):
-    """
-    returns the coordinates of unique sites in the top or bottom
-    nlayers of the given structure.
-    Args:
-        struct: input structure
-
-        nlayers: number of layers
-
-        top: top or bottom layers, default is top layer
-    Return:
-        numpy array of unique coordinates
-    """
-    coords = np.array([site.coords for site in struct])
-    z = coords[:, 2]
-    z = np.around(z, decimals=4)
-    zu, zuind = np.unique(z, return_index=True)
-    if top:
-        z_nthlayer = z[zuind[-nlayers]]
-        zfilter = (z >= z_nthlayer)
-    else:
-        z_nthlayer = z[zuind[nlayers - 1]]
-        zfilter = (z <= z_nthlayer)
-    # site indices in the layers
-    indices_layers = np.argwhere(zfilter).ravel()
-    sa = SpacegroupAnalyzer(struct)
-    symm_data = sa.get_symmetry_dataset()
-    # equivalency mapping for the structure
-    # i'th site in the struct equivalent to eq_struct[i]'th site
-    eq_struct = symm_data["equivalent_atoms"]
-    # equivalency mapping for the layers
-    eq_layers = eq_struct[indices_layers]
-    # site indices of unique atoms in the layers
-    __, ueq_layers_indices = np.unique(eq_layers, return_index=True)
-    # print(ueq_layers_indices)
-    indices_uniq = indices_layers[ueq_layers_indices]
-    # coordinates of the unique atoms in the layers
-    return coords[indices_uniq]
-
-def get_interface(substrate, mat2d, nlayers_2d=2, nlayers_substrate=2,
-                                 separation=5):
-    """
-    For the given lattice matched 2D material and substrate structures,
-    this functions computes all unique sites in the interface layers
-    and subsequently generates all possible unique 2d/substrate
-    interfaces and writes the corresponding poscar files
-    Args:
-        mat2d: Lattice and symmetry-matched 2D material structure
-
-        substrate: Lattice and symmetry-matched 2D substrate structure
-
-        nlayers_substrate: number of substrate layers
-
-        nlayers_2d: number of 2d material layers
-
-        separation: separation between the substrate and the 2d
-                    material
-    Returns:
-        None
-    TODO: give additional random placement of 2D material on substrate
-    """
-    # immediate exit if no structures
-    if not (mat2d and substrate):
-        print("no structures. aborting lattice match ...")
-        return None
-        #sys.exit()
-    # unique site coordinates in the substrate top layers
-    coords_uniq_sub = get_uniq_layercoords(substrate,
-                                           nlayers_substrate,
-                                           top=True)
-    # unique site coordinates in the 2D material bottom layers
-    coords_uniq_2d = get_uniq_layercoords(mat2d,
-                                          nlayers_2d,
-                                          top=False)
-    substrate_top_z = np.max(np.array([site.coords
-                                       for site in substrate])[:, 2])
-    mat_2d_bottom = np.min(np.array([site.coords
-                                     for site in mat2d])[:, 2])
-    # shift normal to the surface by 'seperation'
-    surface_normal = substrate.lattice.matrix[2, :]
-    origin = np.array([0, 0, substrate_top_z])
-    shift_normal = surface_normal / np.linalg.norm(surface_normal) * separation
-    # generate all possible interfaces, one for each combination of
-    # unique substrate and unique 2d materials site in the layers .i.e
-    # an interface structure for each parallel shift
-    # interface = 2D material + substrate
-    interface = substrate.copy()
-    shift_parallel = coords_uniq_sub[0] - coords_uniq_2d[0]
-    shift_parallel[2] = 0
-    shift_net = shift_normal - shift_parallel
-
-    # generate new coords for 2D material to be added to substrate
-    new_coords = []
-    inds = []
-    mat_species = []
-    for ind, site in enumerate(mat2d):
-        new_coord = site.coords
-        new_coord[2] = site.coords[2] - mat_2d_bottom
-        new_coord = new_coord + origin + shift_net
-        new_coords.append(new_coord)
-        inds.append(ind)
-        mat_species.append(site.specie)
-
-    inds = np.array(inds) + len(substrate)
-    # insert mat2d coords and species at the end of the interface using index
-    # Not using Structure.append method as it seems to disrupt atoms order
-    for i, specie, coord in zip(inds, mat_species, new_coords):
-        interface.insert(i, specie, coord, coords_are_cartesian=True)
-
-    return interface
-
-
 def get_aligned_lattices(slab_sub, slab_2d, max_area=200,
                          max_mismatch=0.05,
                          max_angle_diff=1, r1r2_tol=0.2):
@@ -529,6 +417,190 @@ def get_aligned_lattices(slab_sub, slab_2d, max_area=200,
 
     return substrate, mat2d
 
+
+def get_uniq_layercoords(struct, nlayers, top=True):
+    """
+    returns the coordinates of unique sites in the top or bottom
+    nlayers of the given structure.
+    Args:
+        struct: input structure
+
+        nlayers: number of layers
+
+        top: top or bottom layers, default is top layer
+    Return:
+        numpy array of unique coordinates
+    """
+    coords = np.array([site.coords for site in struct])
+    z = coords[:, 2]
+    z = np.around(z, decimals=4)
+    zu, zuind = np.unique(z, return_index=True)
+    if top:
+        z_nthlayer = z[zuind[-nlayers]]
+        zfilter = (z >= z_nthlayer)
+    else:
+        z_nthlayer = z[zuind[nlayers - 1]]
+        zfilter = (z <= z_nthlayer)
+    # site indices in the layers
+    indices_layers = np.argwhere(zfilter).ravel()
+    sa = SpacegroupAnalyzer(struct)
+    symm_data = sa.get_symmetry_dataset()
+    # equivalency mapping for the structure
+    # i'th site in the struct equivalent to eq_struct[i]'th site
+    eq_struct = symm_data["equivalent_atoms"]
+    # equivalency mapping for the layers
+    eq_layers = eq_struct[indices_layers]
+    # site indices of unique atoms in the layers
+    __, ueq_layers_indices = np.unique(eq_layers, return_index=True)
+    # print(ueq_layers_indices)
+    indices_uniq = indices_layers[ueq_layers_indices]
+    # coordinates of the unique atoms in the layers
+    return coords[indices_uniq]
+
+
+def get_interface(substrate, mat2d, nlayers_2d=2, nlayers_substrate=2,
+                                 separation=5):
+    """
+    For the given lattice matched 2D material and substrate structures,
+    this functions computes all unique sites in the interface layers
+    and subsequently generates all possible unique 2d/substrate
+    interfaces and writes the corresponding poscar files
+    Args:
+        mat2d: Lattice and symmetry-matched 2D material structure
+
+        substrate: Lattice and symmetry-matched 2D substrate structure
+
+        nlayers_substrate: number of substrate layers
+
+        nlayers_2d: number of 2d material layers
+
+        separation: separation between the substrate and the 2d
+                    material
+    Returns:
+        interface - Cell object
+    TODO: give additional random placement of 2D material on substrate
+    """
+    # immediate exit if no structures
+    if not (mat2d and substrate):
+        print("no structures. aborting lattice match ...")
+        return None
+        #sys.exit()
+    # unique site coordinates in the substrate top layers
+    coords_uniq_sub = get_uniq_layercoords(substrate,
+                                           nlayers_substrate,
+                                           top=True)
+    # unique site coordinates in the 2D material bottom layers
+    coords_uniq_2d = get_uniq_layercoords(mat2d,
+                                          nlayers_2d,
+                                          top=False)
+    substrate_top_z = np.max(np.array([site.coords
+                                       for site in substrate])[:, 2])
+    mat_2d_bottom = np.min(np.array([site.coords
+                                     for site in mat2d])[:, 2])
+    # shift normal to the surface by 'seperation'
+    surface_normal = substrate.lattice.matrix[2, :]
+    origin = np.array([0, 0, substrate_top_z])
+    shift_normal = surface_normal / np.linalg.norm(surface_normal) * separation
+    # generate all possible interfaces, one for each combination of
+    # unique substrate and unique 2d materials site in the layers .i.e
+    # an interface structure for each parallel shift
+    # interface = 2D material + substrate
+    interface = substrate.copy()
+    shift_parallel = coords_uniq_sub[0] - coords_uniq_2d[0]
+    shift_parallel[2] = 0
+    shift_net = shift_normal - shift_parallel
+
+    # generate new coords for 2D material to be added to substrate
+    new_coords = []
+    inds = []
+    mat_species = []
+    for ind, site in enumerate(mat2d):
+        new_coord = site.coords
+        new_coord[2] = site.coords[2] - mat_2d_bottom
+        new_coord = new_coord + origin + shift_net
+        new_coords.append(new_coord)
+        inds.append(ind)
+        mat_species.append(site.specie)
+
+    inds = np.array(inds) + len(substrate)
+    # insert mat2d coords and species at the end of the interface using index
+    # Not using Structure.append method as it seems to disrupt atoms order
+    for i, specie, coord in zip(inds, mat_species, new_coords):
+        interface.insert(i, specie, coord, coords_are_cartesian=True)
+
+    return interface
+
+
+def get_random_aligned_interface(substrate, mat2d, separation=5):
+    """
+    The lattice matched 2D film is translated w.r.t random lattice vector laterally.
+
+    Args:
+        mat2d: Lattice and symmetry-matched 2D material structure
+
+        substrate: Lattice and symmetry-matched 2D substrate structure
+
+        separation: separation between the substrate and the 2d
+                    material
+    Returns:
+        interface - Cell object
+    """
+    # immediate exit if no structures
+    if not (mat2d and substrate):
+        print("no structures. aborting lattice match ...")
+        return None
+        #sys.exit()
+    # unique site coordinates in the substrate top layers
+    #coords_uniq_sub = get_uniq_layercoords(substrate,
+    #                                       nlayers_substrate,
+    #                                       top=True)
+    # unique site coordinates in the 2D material bottom layers
+    #coords_uniq_2d = get_uniq_layercoords(mat2d,
+    #                                      nlayers_2d,
+    #                                      top=False)
+    substrate_top_z = np.max(np.array([site.coords
+                                       for site in substrate])[:, 2])
+    mat_2d_bottom = np.min(np.array([site.coords
+                                     for site in mat2d])[:, 2])
+    # shift normal to the surface by 'seperation'
+    substrate_matrix = substrate.lattice.matrix
+    surface_normal = substrate_matrix[2, :]
+    origin = np.array([0, 0, substrate_top_z])
+    shift_normal = surface_normal / np.linalg.norm(surface_normal) * separation
+
+    #########################################################################
+    ###### choose random vector within the area of substrate to shift #######
+    #########################################################################
+    shift_parallel = np.array([np.random.uniform(substrate_matrix[:, 0].min(),
+                                            substrate_matrix[:, 0].max()),
+                               np.random.uniform(substrate_matrix[:, 1].min(),
+                                            substrate_matrix[:, 1].max()), 0])
+    shift_parallel[2] = 0
+    shift_net = shift_normal - shift_parallel
+
+    # generate new coords for 2D material to be added to substrate
+    interface = substrate.copy()
+    new_coords = []
+    inds = []
+    mat_species = []
+    for ind, site in enumerate(mat2d):
+        new_coord = site.coords
+        new_coord[2] = site.coords[2] - mat_2d_bottom
+        new_coord = new_coord + origin + shift_net
+        new_coords.append(new_coord)
+        inds.append(ind)
+        mat_species.append(site.specie)
+
+    inds = np.array(inds) + len(substrate)
+    # insert mat2d coords and species at the end of the interface using index
+    # Not using Structure.append method as it seems to disrupt atoms order
+    for i, specie, coord in zip(inds, mat_species, new_coords):
+        interface.insert(i, specie, coord, coords_are_cartesian=True)
+
+    return interface
+
+
+
 def run_lat_match(substrate, twod_layer, match_constraints):
 
     '''
@@ -549,6 +621,7 @@ def run_lat_match(substrate, twod_layer, match_constraints):
             'max_angle_diff':2,
             'r1r2_tol':0.06,
             'separation': 3,
+            'align_random': True,
             'nlayers_substrate':1,
             'nlayers_2d':1,
             'sd_layers':1}
@@ -559,6 +632,7 @@ def run_lat_match(substrate, twod_layer, match_constraints):
     max_angle_diff = match_constraints['max_angle_diff']
     r1r2_tol = match_constraints['r1r2_tol']
     separation = match_constraints['separation']
+    align_random = match_constraints['align_random']
     nlayers_substrate = match_constraints['nlayers_substrate']
     nlayers_2d = match_constraints['nlayers_2d']
     sd_layers = match_constraints['sd_layers']
@@ -591,13 +665,21 @@ def run_lat_match(substrate, twod_layer, match_constraints):
     #merge substrate and mat2d in all possible ways
     hetero_interfaces = None
     if sub and mat2d:
-        try:
-            hetero_interface = get_interface(sub, mat2d,
-                                     nlayers_2d, nlayers_substrate,
-                                     separation)
-        except:
-            print('Lattice match failed at get_interface..')
-            return None, None, None
+        if align_random:
+            try:
+                hetero_interface = get_random_aligned_interface(sub, mat2d,
+                                                                separation)
+            except:
+                print('Lattice match failed at get_interface..')
+                return None, None, None
+        else:
+            try:
+                hetero_interface = get_interface(sub, mat2d,
+                                         nlayers_2d, nlayers_substrate,
+                                         separation)
+            except:
+                print('Lattice match failed at get_interface..')
+                return None, None, None
 
         z_coords_sub = sub.frac_coords[:, 2]
         z_unique, z_inds = np.unique(z_coords_sub, return_index=True)

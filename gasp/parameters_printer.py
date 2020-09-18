@@ -168,9 +168,9 @@ def print_parameters(objects_dict, lat_match_dict=None):
                                           str(variation.grow_parents) + '\n')
                     parameters_file.write('        merge_cutoff: ' +
                                           str(variation.merge_cutoff) + '\n')
-                    parameters_file.write('        halve_offspring_prob' +
+                    parameters_file.write('        halve_offspring_prob: ' +
                                     str(variation.halve_offspring_prob) + '\n')
-                    parameters_file.write('        reduce_both_interfaces' +
+                    parameters_file.write('        reduce_both_interfaces: ' +
                                 str(variation.reduce_both_interfaces) + '\n')
 
                 elif variation.name == 'structure mutation':
@@ -263,6 +263,8 @@ def print_parameters(objects_dict, lat_match_dict=None):
                                   str(lat_match_dict['r1r2_tol']) + '\n')
             parameters_file.write('    separation: ' +
                                   str(lat_match_dict['separation']) + '\n')
+            parameters_file.write('    align_random: ' +
+                                  str(lat_match_dict['align_random']) + '\n')
             parameters_file.write('    nlayers_substrate: ' +
                                   str(lat_match_dict['nlayers_substrate']) + '\n')
             parameters_file.write('    nlayers_2d: ' +

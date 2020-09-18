@@ -320,9 +320,10 @@ def get_lat_match_params(parameters):
 
     lat_match_params = {}
     keys = ['max_area', 'max_mismatch', 'max_angle_diff', 'r1r2_tol',
-                'separation', 'nlayers_substrate', 'nlayers_2d', 'sd_layers']
+                'separation', 'align_random', 'nlayers_substrate',
+                'nlayers_2d', 'sd_layers']
     #all defaults
-    match_constraints = [100, 0.05, 2, 0.06, 2, 1, 1, 1]
+    match_constraints = [100, 0.05, 2, 0.06, 2, True, 1, 1, 1]
 
     # Set all default values to the keys
     for key, param in zip(keys, match_constraints):

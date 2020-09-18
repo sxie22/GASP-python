@@ -886,6 +886,7 @@ LatticeMatch:
     max_angle_diff: <float>
     r1r2_tol: <float>
     separation: <float>
+    align_random: True
     nlayers_substrate: <integer>
     nlayers_2d: <integer>
     sd_layers: <integer>
@@ -913,6 +914,10 @@ Specifies the tolerance between the ratio of areas of the primitive slabs of fil
 
 Specifies the vertical distance in Å above the substrate to place the lattice matched 2D film. Default is 2 (Å)
 
+   * **align_random**
+
+Aligns the 2D film randomly on the substrate if specified True and **nlayers_substrate** and **nlayers_2d** parameters are ignored. Default is True.
+
    * **nlayers_substrate**
 
 Specifies the number of unique layers of substrate slab to consider when aligning the 2D film on top of substrate. Default is 1.
@@ -921,7 +926,7 @@ Specifies the number of unique layers of substrate slab to consider when alignin
 
 Specifies the number of unique layers of 2D film to consider when aligning the 2D film on top of substrate. Default is 1.
 <br>
-The algorithm checks all possible translations of 2D film on substrate by aligning the unique sites in the **nlayers_substrate** and **nlayers_2d**
+The algorithm returns interface with one of the all possible translations of 2D film on substrate by aligning the unique sites in the **nlayers_substrate** and **nlayers_2d**
 
    * **sd_layers**
 
@@ -936,6 +941,7 @@ LatticeMatch:
     max_angle_diff: 2
     r1r2_tol: 0.06
     separation: 2
+    align_random: True
     nlayers_substrate: 1
     nlayers_2d: 1
     sd_layers: 1
