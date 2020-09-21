@@ -495,7 +495,7 @@ Specifies the distance (as fraction of atomic radius) below which to merge atoms
 
    * **halve_offspring_prob**
 
-(Only for interface geometry) Specifies the probability to halve the offspring cell made by mating. This is introduced to explore small area structures as the search often progresses towards large area structures. (large area results in more surface relaxation and more fit organisms). Optional, defaults to 0.25.
+Only allies to the [interface geometry](#iface_geometry)) Specifies the probability to halve the offspring cell made by mating. This is introduced to explore small area structures as the search often progresses towards large area structures. (large area results in more surface relaxation and more fit organisms). Optional, defaults to 0.25.
 
 [Go back to Contents](#contents)
 
@@ -704,7 +704,7 @@ For fixed-composition searches, the range defined by the **min_num_atoms** and *
 
   * **max_interface_atoms**
 
-Specifies the maximum number of atoms for an interface geometry organism. Although an organism is with less number of atoms, lattice matching with substrate often makes supercells and thus number of atoms in the resulting interface cell would be greater. This is a limit on those interface structures after lattice matching. Optional, defaults to 50.
+Specifies the maximum number of atoms for an [interface geometry](#iface_geometry) organism. Matching an organism's lattice with that of a substrate often requires taking supercells of the organism, increasing the number of atoms. This is a limit on those interface structures after lattice matching. Optional, defaults to 50.
 
   * **min_lattice_length**
 
@@ -716,7 +716,7 @@ Specifies the maximum allowed lattice vector length. Optional, and defaults to 2
 
   * **max_scell_lattice_length**
 
-(Applies in interface geometry) Specifies the maximum lattice length of the supercell lattice vector of interface structure made by lattice matching. Optional, and defaults to 30.0.
+Only applies to the [interface geometry](#iface_geometry). SSpecifies the maximum allowed lattice vector length of the interface structure made by lattice matching. Optional, and defaults to 30.0.
 
   * **min_lattice_angle**
 
@@ -836,7 +836,7 @@ The **Geometry** keyword specifies the dimensionality of the structures consider
 
    * **shape**
 
-Specifies the dimensionality of the structures. Four different values may be given:
+Specifies the dimensionality of the structures. Five different values may be given:
 
 1. The keyword **bulk**, which specifies that the algorithm should search for bulk (3D) structures. This is the default.
 
@@ -846,11 +846,9 @@ Specifies the dimensionality of the structures. Four different values may be giv
 
 4. The keyword **cluster**, which specifies that the algorithm should search for zero-dimensional (0D) clusters.
 
-5. The keyword **interface**, which specifies that the algorithm should search for thin (2D) films on given substrate.
+5. The keyword **interface**, which specifies that the algorithm should search for thin (2D) films on a given substrate.
 
 The remaining three keywords in the **Geometry** block apply only to non-bulk structures and are ignored by the algorithm if searching for bulk structures.
-
-For interface geometry, the **min_size** and **max_size** correspond to the thickness of the 2D film only, not the entire interface structure.
 
    * **min_size**
 
@@ -863,6 +861,10 @@ Specifies the maximum allowed size (in Angstroms) of non-bulk structures. Defaul
    * **padding**
 
 Specifies the amount of vacuum padding (in Angstroms) the algorithm adds around non-bulk structures before submitting them for an energy evaluation. Defaults to 10.
+
+   * <a id="iface_geometry"></a>**interface geometry**
+
+   The **interface** geometry utilizes the **sheet** geometry to make the 2D films which are lattice matched and placed on top of a substrate. Hence, the **min_size** and **max_size** parameters correspond to the thickness of the 2D film only, not the entire interface structure. Conversely, parameters in constraints keyword such as **max_interface_atoms** and **max_scell_lattice_length** correspond to the entire interface cell.
 
 See [here](#nonbulk) for details on searching for non-bulk structures, including the definition of the size of a non-bulk structure and how the algorithm adds vacuum padding around non-bulk structures.
 
@@ -887,7 +889,7 @@ LatticeMatch:
     sd_layers: <integer>
 ~~~~
 
-(Only for interface geometry) The **LatticeMatch** keyword specifies the constraints to use for the lattice matching algorithm. These parameters control the possibility of finding a lattice matched substrate, the size of interface structures, alignment of 2D film on interface and relaxation of interface structures. All parameters are optional, however, it is recommended to note the parameters used to understand and analyze search results.
+(Only for [interface geometry](#iface_geometry)) The **LatticeMatch** keyword specifies the constraints to use for the lattice matching algorithm. These parameters control the possibility of finding a lattice matched substrate, the size of interface structures, alignment of 2D film on interface and relaxation of interface structures. All parameters are optional, however, it is recommended to note the parameters used to understand and analyze search results.
 
    * **max_area**
 
@@ -960,7 +962,7 @@ Substrate:
     mu_C: <float>
 ~~~~
 
-(Only for interface geometry) The **Substrate** keyword specifies the required values to calculate objective function. It includes the energetics of primitive substrate calculation, chemical potentials of each species in the 2D film.
+(Only for [interface geometry](#iface_geometry)) The **Substrate** keyword specifies the required values to calculate objective function. It includes the energetics of primitive substrate calculation, chemical potentials of each species in the 2D film.
 
    * **E_sub_prim**
 
