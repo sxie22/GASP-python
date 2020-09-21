@@ -82,9 +82,6 @@ class Mating(object):
         # the cutoff distance (as fraction of atomic radius) below which to
         # merge sites with the same element in the offspring structure
         self.default_merge_cutoff = 1.0
-        # whether to reduce both the parents to primitive (only for interface
-        # geometry)
-        self.default_reduce_both_interfaces = 0.5
 
         # the mean of the cut location
         if 'mu_cut_loc' not in mating_params:
@@ -143,14 +140,6 @@ class Mating(object):
         else:
             self.merge_cutoff = mating_params['merge_cutoff']
 
-        # Following parameters are only used for an interface search
-        if 'reduce_both_interfaces' not in mating_params:
-            self.reduce_both_interfaces = self.default_reduce_both_interfaces
-        elif mating_params['reduce_both_interfaces'] in (None, 'default'):
-            self.reduce_both_interfaces = self.default_reduce_both_interfaces
-        else:
-            self.reduce_both_interfaces = \
-                                    mating_params['reduce_both_interfaces']
         # used to optionally half large area offspring cells
         if 'halve_offspring_prob' in mating_params:
             self.halve_offspring_prob = mating_params['halve_offspring_prob']
@@ -242,8 +231,7 @@ class Mating(object):
         # make_offspring_cell()
         if geometry.shape == 'interface':
             cell_1 = cell_1.get_primitive_structure()
-            if random.random() < self.reduce_both_interfaces:
-                cell_2 = cell_2.get_primitive_structure()
+            cell_2 = cell_2.get_primitive_structure()
 
         # optionally double one of the parents
         if random.random() < self.doubling_prob:

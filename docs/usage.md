@@ -453,7 +453,6 @@ Variations:
         doubling_prob: <float>
         grow_parents: <boolean>
         merge_cutoff: <float>
-        reduce_both_interfaces: <float>
         halve_offspring_prob: <float>
 ~~~~
 
@@ -493,10 +492,6 @@ Specifies whether to grow the smaller parent to the approximate size of the larg
    * **merge_cutoff**
 
 Specifies the distance (as fraction of atomic radius) below which to merge atoms of the same type in the offspring structure. Optional, and defaults to 1.0.
-
-   * **reduce_both_interfaces**
-
-(Only for interface geometry) Specifies whether to make primitive cells of both the parents when mating. One parent is always allowed to be primitive because a primitive cell only seldom exists for an interface parent organism. Secondly, it will again be grown if grow_parents is True. Optional, defaults to 0.5
 
    * **halve_offspring_prob**
 
