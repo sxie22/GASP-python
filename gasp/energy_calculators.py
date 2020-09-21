@@ -45,7 +45,7 @@ class VaspEnergyCalculator(object):
     """
 
     def __init__(self, incar_file, kpoints_file, potcar_files, geometry,
-                max_submits=2, num_rerelax=0):
+                num_submits_to_converge=2, num_rerelax=0):
         '''
         Makes a VaspEnergyCalculator.
 
@@ -68,7 +68,7 @@ class VaspEnergyCalculator(object):
         self.potcar_files = potcar_files
 
         # max number of times to submit an organism to converge a relaxation
-        self.max_submits = max_submits
+        self.num_submits_to_converge = num_submits_to_converge
         # Number of times to submit after converged - to re-relax
         self.num_rerelax = num_rerelax
 
@@ -142,7 +142,7 @@ class VaspEnergyCalculator(object):
 
         # run 'callvasp' script as a subprocess to run VASP
         print('Starting VASP calculation on organism {} '.format(organism.id))
-        for i in range(self.max_submits):
+        for i in range(self.num_submits_to_converge):
             devnull = open(os.devnull, 'w')
             try:
                 subprocess.call(['callvasp', job_dir_path], stdout=devnull,
@@ -161,14 +161,15 @@ class VaspEnergyCalculator(object):
             if converged:
                 break
             else:
-                if not i == self.max_submits - 1:
+                if not i == self.num_submits_to_converge - 1:
                     self.rearrange_files(i+1, job_dir_path)
 
         # check if need to re-relax the converged structure
         if self.num_rerelax > 0:
             for i in range(self.num_rerelax):
-                # start indexing the calculation after self.max_submits
-                ind = self.max_submits + i + 1
+                # start indexing the calculation after
+                # self.num_submits_to_converge
+                ind = self.num_submits_to_converge + i + 1
                 if ind > 1:
                     self.rearrange_files(ind, job_dir_path)
                 devnull = open(os.devnull, 'w')
@@ -177,10 +178,11 @@ class VaspEnergyCalculator(object):
                                     stderr=devnull)
                 except:
                     print('Error running VASP on organism {} '.format(
-                                                                organism.id))
+                                                        organism.id))
                     return None
 
-        # check if converged again (useful when self.max_submits = 0)
+        # check if converged again (useful when
+        # self.num_submits_to_converge = 0)
         converged = False
         with open(job_dir_path + '/OUTCAR') as f:
             for line in f:

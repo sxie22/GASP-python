@@ -745,17 +745,21 @@ def make_vasp_energy_calculator(parameters, composition_space, geometry):
                     print('Quitting...')
                     quit()
 
-        # check if max_submits is provided
-        if 'max_submits' in parameters['EnergyCode']['vasp']:
-            max_submits = parameters['EnergyCode']['vasp']['max_submits']
-            if not isinstance(max_submits, int):
-                print ('Error: Parameter max_submits should be an integer.')
+        # check if num_submits_to_converge is provided
+        if 'num_submits_to_converge' in \
+                    parameters['EnergyCode']['vasp']:
+            num_submits_to_converge = \
+             parameters['EnergyCode']['vasp']['num_submits_to_converge']
+            if not isinstance(num_submits_to_converge, int):
+                print ('Error: Parameter num_submits_to_converge '
+                                            'should be an integer.')
                 print ('Quitting...')
                 quit()
         else:
-            print ('No "max_submits" option given. Using default maximum value'
-                   ' of 2 VASP calculations done on an organism to converge.')
-            max_submits = 2
+            print ('No "num_submits_to_converge" option given. '
+                   'Using default maximum value of 2 VASP'
+                   ' calculations done on an organism to converge.')
+            num_submits_to_converge = 2
         # check if num_rerelax is provided
         num_rerelax = 0
         if 'num_rerelax' in parameters['EnergyCode']['vasp']:
@@ -767,11 +771,13 @@ def make_vasp_energy_calculator(parameters, composition_space, geometry):
 
         print ('VASP calculations on a structure: \n'
                'for energy convergence: {}  and\n'
-               'for (re-)relaxation: {}'.format(max_submits, num_rerelax))
+               'for (re-)relaxation: {}'.format(num_submits_to_converge, num_rerelax))
 
         return energy_calculators.VaspEnergyCalculator(
-                            incar_path, kpoints_path, potcar_paths, geometry,
-                            max_submits=max_submits, num_rerelax=num_rerelax)
+                    incar_path, kpoints_path,
+                    potcar_paths, geometry,
+                    num_submits_to_converge=num_submits_to_converge,
+                    num_rerelax=num_rerelax)
 
 
 def make_stopping_criteria(parameters, composition_space):

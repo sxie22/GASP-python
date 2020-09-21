@@ -188,7 +188,7 @@ See [here](#lammps) for a description and example of a LAMMPS input script.
 ~~~~
     EnergyCode:
         vasp:
-            max_submits: <int>
+            num_submits_to_converge: <int>
             num_rerelax: <int>
             incar: <string>
             kpoints: <string>
@@ -200,22 +200,22 @@ See [here](#lammps) for a description and example of a LAMMPS input script.
 
 The **vasp** keyword specifies that VASP will be used for the energy calculations, and the **incar**, **kpoints** and **potcars** keywords must appear on the subsequent lines.
 
-The **max_submits** keyword specifies maximum number of VASP calculations to run on an organism. That is, if a VASP calculation is not converged, the organism is resubmitted (**max_submits** - 1) times before discarding the organism. Optional, default is 2. The relaxation index starts from 0 to max_submits in job directory.
-
-The **num_rerelax** keyword specifies the number of times to re-relax an organism. Note that this parameter submits for re-relaxation whether or not a previous calculation is converged. This is optional, default is 0. The relaxation index starts from max_submits till num_rerelax in job directory.
-
-~~~
-To simply relax all structures n times irrespective of convergence, use
-
-max_submits: 0 # does nothing
-num_rerelax: n # submits n relaxations
-~~~
-
 The **incar** keyword is followed by the path to the INCAR file to use for all the VASP calculations submitted by the algorithm.
 
 The **kpoints** keyword is followed by the path to the KPOINTS file to use for all the VASP calculations submitted by the algorithm.
 
 The **potcars** keyword is followed by lines specifying the paths to the POTCAR files to use for each element. On each line, the first string is the element symbol, and the second string is the path to the corresponding POTCAR file. POTCAR files must be provided for all elements in the composition space.  
+
+The **num_submits_to_converge** keyword specifies the number of VASP calculations to run on an organism after checking that it is not converged. That is, if a VASP calculation is not converged, the organism is resubmitted (**num_submits_to_converge** - 1) times before discarding the organism. Optional, default is 2. The VASP output files are indexed from 0 to num_submits_to_converge in job directory.
+
+The **num_rerelax** keyword specifies the number of times to submit a VASP calculation to re-relax an organism. Note that this parameter submits for re-relaxation whether or not a previous calculation is converged. This is optional, default is 0. The VASP output files are indexed from num_submits_to_converge till num_rerelax in job directory.
+
+~~~
+To simply relax all structures n times irrespective of convergence, use
+
+num_submits_to_converge: 0 # does nothing
+num_rerelax: n # submits n relaxations
+~~~
 
 See [here](#vasp) for a more detailed description of how to use VASP with GASP.  
 
