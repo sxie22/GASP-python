@@ -976,6 +976,10 @@ Specifies the number of layers in primitive substrate slab. This parameter is ma
 
 Specifies the reference chemical potential of species A. This parameter is mandatory for interface geometry.
 
+~~~~
+Note: Choose species A, B and C in the increasing order of their electronegativities. That is χ_A < χ_B < χ_C 
+~~~~
+
    * **mu_B**
 
 Specifies the reference chemical potential of species A. If there are **two** species in **CompositionSpace**, this parameter is mandatory for interface geometry.
