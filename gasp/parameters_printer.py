@@ -170,8 +170,6 @@ def print_parameters(objects_dict, lat_match_dict=None):
                                           str(variation.merge_cutoff) + '\n')
                     parameters_file.write('        halve_offspring_prob: ' +
                                     str(variation.halve_offspring_prob) + '\n')
-                    parameters_file.write('        reduce_both_interfaces: ' +
-                                str(variation.reduce_both_interfaces) + '\n')
 
                 elif variation.name == 'structure mutation':
                     parameters_file.write('    StructureMut: \n')
