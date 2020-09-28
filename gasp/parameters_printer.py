@@ -77,8 +77,8 @@ def print_parameters(objects_dict, lat_match_dict=None):
             parameters_file.write('        input_script: ' +
                                   energy_calculator.input_script + '\n')
         elif energy_calculator.name == 'vasp':
-            parameters_file.write('        max_submits: ' +
-                                  str(energy_calculator.max_submits) + '\n')
+            parameters_file.write('        num_submits_to_converge: ' +
+                        str(energy_calculator.num_submits_to_converge) + '\n')
             parameters_file.write('        num_rerelax: ' +
                                   str(energy_calculator.num_rerelax) + '\n')
             parameters_file.write('        incar: ' +

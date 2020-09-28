@@ -970,14 +970,14 @@ Specifies the total energy of the primitive substrate slab calculation. Use the 
 
    * **n_sub_prim**
 
-Specifies the number of layers in primitive substrate slab. This parameter is mandatory for interface geometry.
+Specifies the number of atoms in primitive substrate slab. This parameter is mandatory for interface geometry.
 
    * **mu_A**
 
 Specifies the reference chemical potential of species A. This parameter is mandatory for interface geometry.
 
 ~~~~
-Note: Choose species A, B and C in the increasing order of their electronegativities. That is χ_A < χ_B < χ_C 
+Note: Choose species A, B and C in the increasing order of their electronegativities. That is χ_A < χ_B < χ_C
 ~~~~
 
    * **mu_B**
