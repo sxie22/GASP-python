@@ -360,10 +360,11 @@ class Developer(object):
             pool: the Pool
         '''
         # for relaxed organisms in interface goemetry
+        relaxed_iface = False
         if organism.n_sub:
             relaxed_iface = True
-            if not post_lma_develop(organism, composition_space, constraints,
-                                    geometry, pool):
+            if not self.post_lma_develop(organism, composition_space,
+                                            constraints, geometry, pool):
                 return False
 
         # check the constraints on the number of atoms
