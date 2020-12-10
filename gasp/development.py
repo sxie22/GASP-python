@@ -359,10 +359,16 @@ class Developer(object):
 
             pool: the Pool
         '''
+        # for relaxed organisms in interface goemetry
+        if organism.n_sub:
+            relaxed_iface = True
+            if not post_lma_develop(organism, composition_space, constraints,
+                                    geometry, pool):
+                return False
 
         # check the constraints on the number of atoms
-        if not self.satisfies_num_atoms_constraints(organism, geometry,
-                                                    constraints):
+        if not relaxed_iface and not self.satisfies_num_atoms_constraints(
+                                            organism, geometry, constraints):
             return False
 
         # check if the organism is is the composition space
@@ -383,8 +389,8 @@ class Developer(object):
                 return False
 
         # check the lattice length and angle constraints
-        if not self.satisfies_lattice_constraints(organism, geometry,
-                                                            constraints):
+        if not relaxed_iface and not self.satisfies_lattice_constraints(
+                                            organism, geometry, constraints):
             return False
 
         # check the per-species minimum interatomic distance constraints
