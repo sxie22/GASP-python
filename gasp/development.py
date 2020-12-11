@@ -359,6 +359,8 @@ class Developer(object):
 
             pool: the Pool
         '''
+        if not organism:
+            return None
         # for relaxed organisms in interface goemetry
         relaxed_iface = False
         if organism.n_sub:
