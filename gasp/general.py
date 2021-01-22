@@ -119,8 +119,6 @@ class Organism(object):
         # Substrate related defaults
         # Number of atoms of the substrate in the interface
         self.n_sub = None
-        # z coordinate used for selective dynamics
-        self.sd_index=None
         # Save interface cell or just 2D cell
         self.interface_cell=None
 

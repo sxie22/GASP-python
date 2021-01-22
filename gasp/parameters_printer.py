@@ -267,8 +267,6 @@ def print_parameters(objects_dict, lat_match_dict=None):
                                   str(lat_match_dict['nlayers_substrate']) + '\n')
             parameters_file.write('    nlayers_2d: ' +
                                   str(lat_match_dict['nlayers_2d']) + '\n')
-            parameters_file.write('    sd_layers: ' +
-                                  str(lat_match_dict['sd_layers']) + '\n')
             parameters_file.write('\n')
 
             # write user-provided substrate calculation details

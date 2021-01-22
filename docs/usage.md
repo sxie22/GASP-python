@@ -886,7 +886,6 @@ LatticeMatch:
     align_random: True
     nlayers_substrate: <integer>
     nlayers_2d: <integer>
-    sd_layers: <integer>
 ~~~~
 
 (Only for [interface geometry](#iface_geometry)) The **LatticeMatch** keyword specifies the constraints to use for the lattice matching algorithm. These parameters control the possibility of finding a lattice matched substrate, the size of interface structures, alignment of 2D film on interface and relaxation of interface structures. All parameters are optional, however, it is recommended to note the parameters used to understand and analyze search results.
@@ -925,10 +924,6 @@ Specifies the number of unique layers of 2D film to consider when aligning the 2
 <br>
 The algorithm returns interface with one of the all possible translations of 2D film on substrate by aligning the unique sites in the **nlayers_substrate** and **nlayers_2d**
 
-   * **sd_layers**
-
-Specifies the number of substrate layers to relax in the interface structure (Specifies the selective dynamics flags for VASP). Default is 1.
-
 Below is an example **LatticeMatch** block containing the default values of the parameters.
 
 ~~~~
@@ -941,7 +936,6 @@ LatticeMatch:
     align_random: True
     nlayers_substrate: 1
     nlayers_2d: 1
-    sd_layers: 1
 ~~~~
 
 
@@ -966,7 +960,7 @@ Substrate:
 
    * **E_sub_prim**
 
-Specifies the total energy of the primitive substrate slab calculation. Use the same **sd_layers** while relaxing the primitive substrate. This parameter is mandatory for interface geometry.
+Specifies the total energy of the primitive substrate slab calculation. Use the relaxed structure from this calculation as the substrate structure (POSCAR_sub). This parameter is mandatory for interface geometry.
 
    * **n_sub_prim**
 

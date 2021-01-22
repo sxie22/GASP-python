@@ -623,8 +623,7 @@ def run_lat_match(substrate, twod_layer, match_constraints):
             'separation': 3,
             'align_random': True,
             'nlayers_substrate':1,
-            'nlayers_2d':1,
-            'sd_layers':1}
+            'nlayers_2d':1}
     '''
     # variables from the keys
     max_area = match_constraints['max_area']
@@ -635,7 +634,6 @@ def run_lat_match(substrate, twod_layer, match_constraints):
     align_random = match_constraints['align_random']
     nlayers_substrate = match_constraints['nlayers_substrate']
     nlayers_2d = match_constraints['nlayers_2d']
-    sd_layers = match_constraints['sd_layers']
 
     twod_prim = twod_layer.get_primitive_structure()
     substrate_prim = substrate.get_primitive_structure()
@@ -660,7 +658,7 @@ def run_lat_match(substrate, twod_layer, match_constraints):
         scell_size = n_aligned_sub / n_prim_sub
     except:
         print ('Lattice match failed at get_aligned_lattices..')
-        return None, None, None
+        return None, None
 
     #merge substrate and mat2d in all possible ways
     hetero_interfaces = None
@@ -671,7 +669,7 @@ def run_lat_match(substrate, twod_layer, match_constraints):
                                                                 separation)
             except:
                 print('Lattice match failed at get_interface..')
-                return None, None, None
+                return None, None
         else:
             try:
                 hetero_interface = get_interface(sub, mat2d,
@@ -679,16 +677,15 @@ def run_lat_match(substrate, twod_layer, match_constraints):
                                          separation)
             except:
                 print('Lattice match failed at get_interface..')
-                return None, None, None
+                return None, None
 
-        z_coords_sub = sub.frac_coords[:, 2]
-        z_unique, z_inds = np.unique(z_coords_sub, return_index=True)
-        if sd_layers == 0: # freeze all substrate atoms
-            sd_index = n_aligned_sub - 1
-        else:    # relax top layer of substrate atoms
-            sd_index = z_inds[len(z_inds)-sd_layers] - 1
+    # add sd_flags/site_properties for all twod_prim sites
+    if None in hetero_interface.site_properties['selective_dynamics']:
+        for site in hetero_interface.sites:
+            if not 'selective_dynamics' in site.properties.keys():
+                site.properties['selective_dynamics'] = [True, True, True]
 
     if hetero_interface:
-        return  hetero_interface, n_aligned_sub, sd_index
+        return  hetero_interface, n_aligned_sub
     else:
-        return None, None, None
+        return None, None

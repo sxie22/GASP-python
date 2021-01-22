@@ -74,8 +74,7 @@ class VaspEnergyCalculator(object):
 
     def do_energy_calculation(self, organism,
                               composition_space, E_sub_prim=None,
-                              n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0,
-                              no_z=False):
+                              n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0):
         """
         Calculates the energy of an organism using VASP, and returns the relaxed
         organism. If the calculation fails, returns None.
@@ -95,9 +94,6 @@ class VaspEnergyCalculator(object):
             potentials of species A, B, C (ordered based on increasing
             electronegativities)
 
-            no_z (bool): (interface geometry only) Whether to relax z
-            coordinates of structures
-
         Precondition: the garun directory and temp subdirectory exist, and we
             are currently located inside the garun directory
 
@@ -116,8 +112,7 @@ class VaspEnergyCalculator(object):
         if E_sub_prim is not None and n_sub_prim is not None:
             cell = organism.cell
             n_sub = organism.n_sub
-            sd_index = organism.sd_index
-            self.write_poscar(cell, n_sub, sd_index, job_dir_path, no_z=no_z)
+            self.write_poscar(cell, n_sub, job_dir_path)
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
 
@@ -214,7 +209,7 @@ class VaspEnergyCalculator(object):
         enthalpy = u + pv
 
         # new relaxed_cell, total_energy, epa, ef_ads are attributed
-        # old n_sub, sd_index and others are still carried
+        # old n_sub and others are still carried
         organism.cell = relaxed_cell
         organism.total_energy = enthalpy
 
@@ -273,7 +268,7 @@ class VaspEnergyCalculator(object):
         return organism
 
 
-    def write_poscar(self, iface, n_sub, sd_index, job_dir_path, no_z=False):
+    def write_poscar(self, iface, n_sub, job_dir_path):
         '''
         Writes POSCAR of the interface with sd flags and comment line in job dir
 
@@ -282,32 +277,14 @@ class VaspEnergyCalculator(object):
 
             n_sub: (int) number of substrate atoms in interface
 
-            sd_index: (int) index of coordinate above which sd_flags would be
-                        True
-
             job_dir_path: Path of job submit directory
-
-            no_z: (bool) whether to relax sd_flags of z-coordinates
 
         '''
         n_iface = iface.num_sites
         n_twod = n_iface - n_sub
         comment = 'N_sub %d    N_twod %d' % (n_sub, n_twod)
 
-        sd_frozen = np.zeros((sd_index + 1, 3))
-        sd_relax = np.ones((n_iface - sd_index -1, 3))
-        sd_flags = np.concatenate((sd_frozen, sd_relax))
-        # If do not want atoms to relax in z-direction
-        if no_z is True:
-            sd_flags[:, 2] = np.zeros(len(sd_flags))
-
-        #sd_flags = np.zeros_like(iface.frac_coords)
-        #z_coords_iface = iface.frac_coords[:, 2]
-        #sd_flags[np.where(z_coords_iface >= sd_index)] = np.ones((1, 3))
-        new_sd = []
-        for i in sd_flags:
-            new_sd.append([bool(x) for x in i])
-        poscar = Poscar(iface, comment, selective_dynamics=new_sd)
+        poscar = Poscar(iface, comment)
         poscar.write_file(filename=job_dir_path + '/POSCAR')
 
     def rearrange_files(self, i, job_dir_path):
@@ -355,8 +332,7 @@ class LammpsEnergyCalculator(object):
 
     def do_energy_calculation(self, organism,
                               composition_space, E_sub_prim=None,
-                              n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0,
-                              no_z=False):
+                              n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0):
         """
         Calculates the energy of an organism using LAMMPS, and returns the
         relaxed organism. If the calculation fails, returns None.
@@ -375,8 +351,6 @@ class LammpsEnergyCalculator(object):
             mu_A, mu_B, mu_C (floats): (interface geometry only) Chemical
             potentials of species A, B, C (ordered based on increasing
             electronegativities)
-
-            no_z: (bool) whether to relax sd_flags of z-coordinates
 
         Precondition: the garun directory and temp subdirectory exist, and we
             are currently located inside the garun directory
@@ -401,8 +375,7 @@ class LammpsEnergyCalculator(object):
         if E_sub_prim is not None and n_sub_prim is not None:
             cell = organism.cell
             n_sub = organism.n_sub
-            sd_index = organism.sd_index
-            self.write_poscar(cell, n_sub, sd_index, job_dir_path, no_z=no_z)
+            self.write_poscar(cell, n_sub, job_dir_path)
         else:
             organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR.' +
                          str(organism.id) + '_unrelaxed')
@@ -724,7 +697,7 @@ class LammpsEnergyCalculator(object):
                 energy = float(lines[i + 2].split()[4])
         return energy
 
-    def write_poscar(self, iface, n_sub, sd_index, job_dir_path, no_z=False):
+    def write_poscar(self, iface, n_sub, job_dir_path):
         '''
         Writes POSCAR of the interface with sd flags and comment line in job dir
 
@@ -733,32 +706,14 @@ class LammpsEnergyCalculator(object):
 
             n_sub: (int) number of substrate atoms in interface
 
-            sd_index: (int) index of coordinate above which sd_flags would be
-                        True
-
             job_dir_path: Path of job submit directory
-
-            no_z: (bool) whether to relax sd_flags of z-coordinates
 
         '''
         n_iface = iface.num_sites
         n_twod = n_iface - n_sub
         comment = 'N_sub %d    N_twod %d' % (n_sub, n_twod)
 
-        sd_frozen = np.zeros((sd_index + 1, 3))
-        sd_relax = np.ones((n_iface - sd_index -1, 3))
-        sd_flags = np.concatenate((sd_frozen, sd_relax))
-        # If do not want atoms to relax in z-direction
-        if no_z is True:
-            sd_flags[:, 2] = np.zeros(len(sd_flags))
-
-        #sd_flags = np.zeros_like(iface.frac_coords)
-        #z_coords_iface = iface.frac_coords[:, 2]
-        #sd_flags[np.where(z_coords_iface >= sd_index)] = np.ones((1, 3))
-        new_sd = []
-        for i in sd_flags:
-            new_sd.append([bool(x) for x in i])
-        poscar = Poscar(iface, comment, selective_dynamics=new_sd)
+        poscar = Poscar(iface, comment)
         poscar.write_file(filename=job_dir_path + '/POSCAR')
 
 

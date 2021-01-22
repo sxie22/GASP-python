@@ -298,9 +298,8 @@ def make_objects(parameters):
         quit()
 
     if not 'queue' in job_specs:
-        print ('Please specify the queue name to start workers in..')
-        print ('Ex: hpg2-compute\nQuitting..')
-        quit()
+        print ('Specify queue option in job_specs if the SLURM/PBS cluster'
+                        ' requires it. Otherwise ignore..')
 
     if not 'interface' in job_specs:
         print ('Using default interface \'ib0\' (infiniband nodes)')
@@ -321,7 +320,7 @@ def get_lat_match_params(parameters):
     lat_match_params = {}
     keys = ['max_area', 'max_mismatch', 'max_angle_diff', 'r1r2_tol',
                 'separation', 'align_random', 'nlayers_substrate',
-                'nlayers_2d', 'sd_layers']
+                'nlayers_2d']
     #all defaults
     match_constraints = [100, 0.05, 2, 0.06, 2, True, 1, 1, 1]
 
@@ -354,8 +353,6 @@ def get_substrate_params(parameters):
         #    sub_params['mu_B'] = 0
         #if 'mu_C' not in sub_params:
         #    sub_params['mu_C'] = 0
-        #if 'no_z' not in sub_params:
-        #        sub_params['no_z'] = False
         return sub_params
     else:
         return None
