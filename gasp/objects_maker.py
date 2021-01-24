@@ -273,8 +273,8 @@ def make_objects(parameters):
     objects_dict['pool'] = pool
 
     job_specs = {}
-    if 'job_specs' in parameters:
-        job_specs = parameters['job_specs']
+    if 'JobSpecs' in parameters:
+        job_specs = parameters['JobSpecs']
 
     if 'cores' in job_specs:
         if job_specs['cores'] > 8:
