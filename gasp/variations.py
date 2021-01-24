@@ -459,7 +459,7 @@ class Mating(object):
         # as the interface search progresses.)
         if geometry.shape == 'interface':
             area = self.surface_area(offspring_cell)
-            if area > 50: # hardcoded limit to protect small cells from halving
+            if area > constraints.max_area / 2:
                 if random.random() < self.halve_offspring_prob:
                     offspring_cell = self.halve_offspring(offspring_cell,
                                                           cut_vector_index)

@@ -188,6 +188,7 @@ class Constraints(object):
 
         # check that min and max numbers of atoms makes sense
         self.check_num_atoms_range(composition_space)
+        self.max_area = None
 
     def set_all_to_defaults(self, composition_space):
         '''

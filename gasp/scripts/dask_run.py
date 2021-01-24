@@ -63,12 +63,14 @@ def main():
     # Everythin will be used explicitly as kwargs for energy_calculator
     E_sub_prim, n_sub_prim, mu_A, mu_B, mu_C = None, None, None, None, None
     lat_match_dict = None
+    max_area = None
     substrate_search = False
     substrate_params = {}
     if geometry.shape == 'interface':
         substrate_search = True
 
     if substrate_search:
+        max_area = match_constraints['max_area']
         match_constraints = objects_maker.get_lat_match_params(parameters)
         substrate_params = objects_maker.get_substrate_params(parameters)
         main_keys = ['E_sub_prim', 'n_sub_prim', 'mu_A']
@@ -92,6 +94,7 @@ def main():
     num_calcs_at_once = objects_dict['num_calcs_at_once']
     composition_space = objects_dict['composition_space']
     constraints = objects_dict['constraints']
+    constraints.max_area = max_area   # set max_area from match_constraints
     developer = objects_dict['developer']
     redundancy_guard = objects_dict['redundancy_guard']
     stopping_criteria = objects_dict['stopping_criteria']

@@ -52,6 +52,7 @@ geometry = objects_dict['geometry']
 # Everythin will be used explicitly as kwargs for energy_calculator
 E_sub_prim, n_sub_prim, mu_A, mu_B, mu_C = None, None, None, None, None
 lat_match_dict = None
+max_area = None
 substrate_search = False
 substrate_params = {}
 if geometry.shape == 'interface':
@@ -68,6 +69,7 @@ if substrate_search:
             quit()
     lat_match_dict = match_constraints
     lat_match_dict.update(substrate_params)
+    max_area = match_constraints['max_area']
     # Parse the primitve substrate structure from input argument
     substrate_prim = general.Cell.from_file('POSCAR_sub')
     # check if substrate has sd_flags ; if no flags, set all to be F F F
@@ -81,6 +83,7 @@ organism_creators = objects_dict['organism_creators']
 num_calcs_at_once = objects_dict['num_calcs_at_once']
 composition_space = objects_dict['composition_space']
 constraints = objects_dict['constraints']
+constraints.max_area = max_area   # set max_area from match_constraints
 developer = objects_dict['developer']
 redundancy_guard = objects_dict['redundancy_guard']
 stopping_criteria = objects_dict['stopping_criteria']

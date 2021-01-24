@@ -210,8 +210,10 @@ The **num_submits_to_converge** keyword specifies the number of VASP calculation
 
 The **num_rerelax** keyword specifies the number of times to submit a VASP calculation to re-relax an organism. Note that this parameter submits for re-relaxation whether or not a previous calculation is converged. This is optional, default is 0. The VASP output files are indexed from num_submits_to_converge till num_rerelax in job directory.
 
+Note that in some cases like bulk alloys, the search benefits by re-relaxing a converged structure (CONTCAR). So, we use different parameters to specify the number of resubmits to converge and number of times to re-relax a converged structure.
+
 ~~~
-To simply relax all structures n times irrespective of convergence, use
+The following example shows the inputs to simply relax n times irrespective of convergence.
 
 num_submits_to_converge: 0 # does nothing
 num_rerelax: n # submits n relaxations
@@ -495,7 +497,7 @@ Specifies the distance (as fraction of atomic radius) below which to merge atoms
 
    * **halve_offspring_prob**
 
-Only allies to the [interface geometry](#iface_geometry)) Specifies the probability to halve the offspring cell made by mating. This is introduced to explore small area structures as the search often progresses towards large area structures. (large area results in more surface relaxation and more fit organisms). Optional, defaults to 0.25.
+Only applies to the [interface geometry](#iface_geometry)) Specifies the probability to halve the offspring cell made by mating. The area of the offspring cell has to be greater than half of the max_area in [LatticeMatch](#latticematch). This is introduced to explore small area structures as the search often progresses towards large area structures. (large area results in more surface relaxation and more fit organisms). Optional, defaults to 0.25.
 
 [Go back to Contents](#contents)
 
