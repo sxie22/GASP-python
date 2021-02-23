@@ -114,6 +114,14 @@ class Organism(object):
         self._id = id_generator.make_id()
         # the name of the algorithm that created this organism
         self.made_by = maker
+        # save the ids of parents if made by variation
+        self.parents = None
+        # Substrate related defaults
+        # Number of atoms of the substrate in the interface
+        self.n_sub = None
+        # Save interface cell or just 2D cell
+        self.interface_cell=None
+
 
     # This keeps the id (sort of) immutable by causing an exception to be
     # raised if the id is attempted to be set with org.id = some_id.
@@ -209,6 +217,19 @@ class Cell(Structure):
     Represents a cell. Provides additional functionality to the
     pymatgen.core.structure.Structure class.
     """
+    def __init__(self, lattice, species, coords, charge=None,
+                    validate_proximity=False, to_unit_cell=False,
+                    coords_are_cartesian=False, site_properties=None):
+        """
+        Takes all the attributes from Structure object and makes it into
+        a Cell object.
+        """
+        super(Cell, self).__init__(lattice, species, coords, charge=charge,
+                                        validate_proximity=validate_proximity,
+                                        to_unit_cell=to_unit_cell,
+                                        coords_are_cartesian=coords_are_cartesian,
+                                        site_properties=site_properties)
+
 
     def rotate_to_principal_directions(self):
         """
@@ -227,7 +248,7 @@ class Cell(Structure):
                     self.lattice.matrix[0][1],
                     self.lattice.matrix[0][0]))
         new_structure = rotation.apply_transformation(self)
-        self.modify_lattice(new_structure.lattice)
+        self.lattice = new_structure.lattice
 
         # rotate about the y-axis to make a parallel to the x-axis
         rotation = RotationTransformation(
@@ -235,7 +256,7 @@ class Cell(Structure):
                     self.lattice.matrix[0][2],
                     self.lattice.matrix[0][0]))
         new_structure = rotation.apply_transformation(self)
-        self.modify_lattice(new_structure.lattice)
+        self.lattice = new_structure.lattice
 
         # rotate about the x-axis to make b lie in the x-y plane
         rotation = RotationTransformation(
@@ -243,19 +264,19 @@ class Cell(Structure):
                     self.lattice.matrix[1][2],
                     self.lattice.matrix[1][1]))
         new_structure = rotation.apply_transformation(self)
-        self.modify_lattice(new_structure.lattice)
+        self.lattice = new_structure.lattice
 
         # make sure they are all pointing in positive directions
         if self.lattice.matrix[0][0] < 0:
             # rotate about y-axis to make a positive
             rotation = RotationTransformation([0, 1, 0], 180)
             new_structure = rotation.apply_transformation(self)
-            self.modify_lattice(new_structure.lattice)
+            self.lattice = new_structure.lattice
         if self.lattice.matrix[1][1] < 0:
             # rotate about x-axis to make b positive
             rotation = RotationTransformation([1, 0, 0], 180)
             new_structure = rotation.apply_transformation(self)
-            self.modify_lattice(new_structure.lattice)
+            self.lattice = new_structure.lattice
         if self.lattice.matrix[2][2] < 0:
             # mirror c across the x-y plane to make it positive
             # a and b
@@ -265,7 +286,7 @@ class Cell(Structure):
             cx = self.lattice.matrix[2][0]
             cy = self.lattice.matrix[2][1]
             cz = -1*self.lattice.matrix[2][2]
-            self.modify_lattice(Lattice([a, b, [cx, cy, cz]]))
+            self.lattice = Lattice([a, b, [cx, cy, cz]])
 
     def rotate_c_parallel_to_z(self):
         """
@@ -282,7 +303,7 @@ class Cell(Structure):
                     self.lattice.matrix[2][1],
                     self.lattice.matrix[2][0]))
         new_structure = rotation.apply_transformation(self)
-        self.modify_lattice(new_structure.lattice)
+        self.lattice = new_structure.lattice
 
         # rotate about the y-axis to make c parallel to the z-axis
         rotation = RotationTransformation(
@@ -290,14 +311,14 @@ class Cell(Structure):
                 self.lattice.matrix[2][0],
                 self.lattice.matrix[2][2]))
         new_structure = rotation.apply_transformation(self)
-        self.modify_lattice(new_structure.lattice)
+        self.lattice = new_structure.lattice
 
         # make sure c is pointing along the positive z-axis
         if self.lattice.matrix[2][2] < 0:
             # rotate 180 degrees about the x-axis
             rotation = RotationTransformation([1, 0, 0], 180)
             new_structure = rotation.apply_transformation(self)
-            self.modify_lattice(new_structure.lattice)
+            self.lattice = new_structure.lattice
 
     def translate_atoms_into_cell(self):
         """
@@ -346,7 +367,7 @@ class Cell(Structure):
         # modify the cell to correspond to the reduced structure
         rcartesian_coords = reduced_structure.cart_coords
         rspecies = reduced_structure.species
-        self.modify_lattice(reduced_structure.lattice)
+        self.lattice = reduced_structure.lattice
         site_indices = []
         for i in range(len(self.sites)):
             site_indices.append(i)
@@ -379,7 +400,7 @@ class Cell(Structure):
         successful_reduction = self.reduce_cell()
 
         # unpad the reduced cell
-        geometry.unpad(self, constraints)
+        geometry.unpad(self, "", constraints)
 
         return successful_reduction
 
@@ -426,6 +447,13 @@ class Cell(Structure):
             if coord[2] > maxz:
                 maxz = coord[2]
         return [[minx, maxx], [miny, maxy], [minz, maxz]]
+
+    def surface_area(cell):
+        """
+        Calculates the surface area of the Cell
+        """
+        m = cell.lattice.matrix
+        return np.linalg.norm(np.cross(m[0], m[1]))
 
 
 class OffspringGenerator(object):
@@ -591,13 +619,15 @@ class CompositionSpace(object):
     Represents the composition space to be searched by the algorithm.
     """
 
-    def __init__(self, endpoints):
+    def __init__(self, endpoints, sub_search=False):
         """
         Makes a CompositionSpace, which is list of
         pymatgen.core.composition.Composition objects.
 
         Args:
             endpoints: the list of compositions, as strings (e.g., ["Al2O3"])
+
+            sub_search (bool): whether it is a interface geometry
         """
 
         for i in range(len(endpoints)):
@@ -605,6 +635,9 @@ class CompositionSpace(object):
             endpoints[i] = endpoints[i].reduced_composition
 
         self.endpoints = endpoints
+
+        # If it is substrate search, set these defaults and new_obj_fn
+        self.sub_search = sub_search
 
         # objective function lives here
         self.objective_function = self.infer_objective_function()
@@ -616,22 +649,57 @@ class CompositionSpace(object):
         self.max_dist_from_center = (float(len(self.endpoints) - 1))/float(len(
             self.endpoints))
 
+        species_dict = {}
+        elems = self.get_all_elements()
+        # Specify species A, B, C always in increasing atomic number
+        sorted_elems = sorted(elems, key=lambda x: x.number)
+        species_dict['specie_A'] = sorted_elems[0]
+        if len(elems) > 1:
+            species_dict['specie_B'] = sorted_elems[1]
+        if len(elems) > 2:
+            species_dict['specie_C'] = sorted_elems[2]
+        self.species_dict = species_dict
+
+
     def infer_objective_function(self):
         """
         Infers the objective function (energy per atom or phase diagram) based
         on the composition space.
 
         Returns either 'epa' or 'pd'.
+
+        For substrate search, epa is the energy of formation of adsorption
+        on substrate.
+
+        EDIT: In substrate search, the formationn energy calculated using
+        chemical potentials needs to be used in place of 'epa'. Also, for a
+        composition range (2 or more endpoints), 'pd' cannot be used. Because
+        the total energy also includes substrate energy, while composiiton is
+        that of only 2D system.
+
+        So, eliminating 'pd' completely for substrate search while using
+        chemical potentials.
+
+        TODO: Include total_adsorption_energy and formation_energy as attributes
+        which activate during substrate search. Depending on the type of
+        energy chosen, use 'pd' or 'epa' type objective_function respectively.
         """
 
         if len(self.endpoints) == 1:
-            return 'epa'
+            obj = 'epa'
         else:
             for point in self.endpoints:
                 for next_point in self.endpoints:
                     if not point.almost_equals(next_point, 0.0, 0.0):
-                        return 'pd'
-        return 'epa'
+                        obj = 'pd'
+
+        # For substrate search, use 'epa' here. However, chemical potential
+        # based surface free energy is used as objective function, although,
+        # it reads 'epa'. See energy_calculators.do_energy_calculation for more
+        if self.sub_search:
+            obj = 'epa'
+
+        return obj
 
     def get_center(self):
         """
@@ -874,25 +942,37 @@ class DataWriter(object):
     For writing useful data to a file in the course of a search.
     """
 
-    def __init__(self, file_path, composition_space):
+    def __init__(self, garun_dir, composition_space, sub_search=False):
         """
         Makes a DataWriter.
 
         Args:
-            file_path: the path to the file where the data is to be written
+            garun_dir: the path to the garun directory where run_data file is
+            to be written
 
             composition_space: the CompositionSpace of the search
+
+            sub_search (bool): whether it is interface geometry search
         """
 
-        self.file_path = file_path
+        self.file_path = garun_dir + '/run_data'
+        self.sub_search = sub_search
         with open(self.file_path, 'a') as data_file:
             data_file.write('Composition space endpoints: ')
             for endpoint in composition_space.endpoints:
                 data_file.write(' {}'.format(
                     endpoint.reduced_formula.replace(' ', '')))
             data_file.write('\n\n')
-            data_file.write('id\t\t composition\t total energy\t\t '
-                            'epa\t\t\t num calcs\t best value\n\n')
+            if not sub_search:
+                data_file.write('id\t\t composition\t total energy\t\t '
+                                'epa\t\t\t num calcs\t best value\n\n')
+            else:
+                data_file.write('id\t comp\t n-2D\t n-sub\t surface area\t '
+                                'total energy\t  epa\t\t num calcs\t best value\n\n')
+
+        self.genes_file = garun_dir + '/genes_data'
+        with open(self.genes_file, 'a') as genes:
+            genes.write('id\t parents id(s)\t maker\n\n')
 
     def write_data(self, organism, num_calcs, progress):
         """
@@ -911,6 +991,9 @@ class DataWriter(object):
                 of the convex hull, or None if no convex hull could be
                 constructed.
         """
+        # if progress is None due to some error in get_convex_hull_area
+        if progress is None:
+            progress = 0.0
 
         # determine how many tabs to use after the composition
         formula = organism.composition.formula.replace(' ', '')
@@ -918,15 +1001,45 @@ class DataWriter(object):
             format_string = '{0}\t\t {1}\t {2:.6f}\t\t {3:.6f}\t\t {4}\t\t'
         else:
             format_string = '{0}\t\t {1}\t\t {2:.6f}\t\t {3:.6f}\t\t {4}\t\t'
+        if self.sub_search: # if this is a substrate search
+            format_string = '{0}\t {1}\t {2}\t {3}\t {4:.6f}\t {5:.6f}\t {6:.6f}\t {7}\t\t'
+            num_twod = len(organism.cell.sites)
+            ab = organism.cell.lattice.matrix[:2]
+            org_surface_area = np.linalg.norm(np.cross(ab[0], ab[1]))
+
 
         # determine what to write for the progress
-        if progress is None:
-            format_string = format_string + ' None\n'
+        if self.sub_search:
+            format_string = format_string + ' {8:.6f}\n'
         else:
-            format_string = format_string + ' {5:.6f}\n'
+            if progress is None:
+                format_string = format_string + ' None\n'
+            else:
+                format_string = format_string + ' {5:.6f}\n'
 
         # write the line to the file
         with open(self.file_path, 'a') as data_file:
-            data_file.write(format_string.format(
-                organism.id, formula, organism.total_energy, organism.epa,
-                num_calcs, progress))
+            if self.sub_search:
+                data_file.write(format_string.format(
+                    organism.id, formula, num_twod, organism.n_sub,
+                    org_surface_area, organism.total_energy, organism.epa,
+                    num_calcs, progress))
+            else:
+                data_file.write(format_string.format(
+                    organism.id, formula, organism.total_energy, organism.epa,
+                    num_calcs, progress))
+
+        # write genes_data file
+        self.write_genes_file(organism)
+
+    def write_genes_file(self, organism):
+        """
+        Writes the maker of every organism and including parents for an
+        offspring organism to a file "genes_data" in the garun folder.
+
+        Args:
+            organism: the Organism whose data to write
+        """
+        with open(self.genes_file, 'a') as genes:
+            genes.write('{0}\t {1}\t {2}\n'.format(
+                            organism.id, organism.parents, organism.made_by))

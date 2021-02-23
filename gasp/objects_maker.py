@@ -40,32 +40,6 @@ def make_objects(parameters):
     # to hold all the objects
     objects_dict = {}
 
-    # make the composition space object
-    if 'CompositionSpace' in parameters:
-        composition_space = general.CompositionSpace(
-            parameters['CompositionSpace'])
-    else:
-        print('Input file must contain a "CompositionSpace" block.')
-        print("Quitting...")
-        quit()
-
-    objects_dict['composition_space'] = composition_space
-
-    # make the constraints object
-    if 'Constraints' in parameters:
-        if 'min_num_atoms' in parameters['Constraints']:
-            if parameters['Constraints']['min_num_atoms'] < 2:
-                print('The value passed to the "min_num_atoms" keyword in the '
-                      'Constraints block must greater than or equal to 2.')
-                print('Quitting...')
-                quit()
-        constraints = development.Constraints(parameters['Constraints'],
-                                              composition_space)
-    else:
-        constraints = development.Constraints('default', composition_space)
-
-    objects_dict['constraints'] = constraints
-
     # make the geometry object
     if 'Geometry' not in parameters:
         geometry = geo.Bulk()
@@ -79,11 +53,48 @@ def make_objects(parameters):
         geometry = geo.Wire(parameters['Geometry'])
     elif parameters['Geometry']['shape'] == 'sheet':
         geometry = geo.Sheet(parameters['Geometry'])
+    elif parameters['Geometry']['shape'] == 'interface':
+        geometry = geo.Substrate_2D(parameters['Geometry'])
     # TODO: add any other non-bulk geometries here
     else:
         geometry = geo.Bulk()
 
     objects_dict['geometry'] = geometry
+    substrate_search = False
+    if geometry.shape == 'interface':
+        substrate_search = True
+
+    # make the composition space object
+    if 'CompositionSpace' in parameters:
+        composition_space = general.CompositionSpace(
+            parameters['CompositionSpace'], sub_search=substrate_search)
+    else:
+        print('Input file must contain a "CompositionSpace" block.')
+        print("Quitting...")
+        quit()
+
+    objects_dict['composition_space'] = composition_space
+
+    # make the constraints object
+    if 'Constraints' in parameters:
+        cons_min_num = 2
+        constraints_parameters = parameters['Constraints']
+        if substrate_search:
+            cons_min_num = 1
+            if 'sub_search' not in constraints_parameters:
+                constraints_parameters['sub_search'] = True
+        if 'min_num_atoms' in constraints_parameters:
+            if constraints_parameters['min_num_atoms'] < cons_min_num:
+                print('The value passed to the "min_num_atoms" keyword in the '
+                      'Constraints block must greater than or equal to 2.')
+                print('Quitting...')
+                quit()
+        constraints = development.Constraints(constraints_parameters,
+                                              composition_space)
+    else:
+        constraints = development.Constraints('default', composition_space)
+
+    objects_dict['constraints'] = constraints
 
     # make the development object
     if 'Development' in parameters:
@@ -261,8 +272,90 @@ def make_objects(parameters):
     pool.comp_fitness_weight = comp_fitness_weight
     objects_dict['pool'] = pool
 
+    job_specs = {}
+    if 'JobSpecs' in parameters:
+        job_specs = parameters['JobSpecs']
+
+    if 'cores' in job_specs:
+        if job_specs['cores'] > 8:
+            print ('Using max. default cpus_per_task: 8')
+            job_specs['cores'] = 8
+    else:
+        # default cpus_per_task for a worker
+        job_specs['cores'] = 1
+
+    if not 'walltime' in job_specs:
+        print ('Using default wall time of 24:00:00')
+        job_specs['walltime'] = '24:00:00'
+
+    if 'memory' not in job_specs:
+        # default job memory for a worker
+        print ('Using default total memory of 8GB per worker')
+        job_specs['memory'] = '8GB'
+
+    if not 'project' in job_specs:
+        print ('Please specify the project "#SBATCH -A" tag for worker.')
+        quit()
+
+    if not 'queue' in job_specs:
+        print ('Specify queue option in job_specs if the SLURM/PBS cluster'
+                        ' requires it. Otherwise ignore..')
+
+    if not 'interface' in job_specs:
+        print ('Using default interface \'ib0\' (infiniband nodes)')
+        job_specs['interface'] = 'ib0'
+
+    objects_dict['job_specs'] = job_specs
+
     return objects_dict
 
+def get_lat_match_params(parameters):
+    """
+    Returns the lattice matching constraints from input yaml files as a
+    dictionary
+
+    Sets default constraints if none present
+    """
+
+    lat_match_params = {}
+    keys = ['max_area', 'max_mismatch', 'max_angle_diff', 'r1r2_tol',
+                'separation', 'align_random', 'nlayers_substrate',
+                'nlayers_2d']
+    #all defaults
+    match_constraints = [100, 0.05, 2, 0.06, 2, True, 1, 1, 1]
+
+    # Set all default values to the keys
+    for key, param in zip(keys, match_constraints):
+        lat_match_params[key] = param
+
+    # Check if any user specied constraints are available and replace
+    if 'LatticeMatch' not in parameters:
+        print ('No lattice match constraints provided. Using defaults...')
+    else:
+        for key in keys:
+            if key in parameters['LatticeMatch']:
+                lat_match_params[key] = parameters['LatticeMatch'][key]
+
+    return lat_match_params
+
+def get_substrate_params(parameters):
+    """
+    Returns the total energy (enthalpy) of primitive substrate calculation
+    and number of atoms in the primitive substrate cell
+
+    This is mandatory and no defaults!
+    """
+    if 'Substrate' in parameters:
+        sub_params = parameters['Substrate']
+        # A, B, C are species in film only
+        # Atleast should provide mu_A assuming only one species
+        #if 'mu_B' not in sub_params:
+        #    sub_params['mu_B'] = 0
+        #if 'mu_C' not in sub_params:
+        #    sub_params['mu_C'] = 0
+        return sub_params
+    else:
+        return None
 
 def make_organism_creators(parameters, composition_space, constraints):
     """
@@ -649,8 +742,39 @@ def make_vasp_energy_calculator(parameters, composition_space, geometry):
                     print('Quitting...')
                     quit()
 
+        # check if num_submits_to_converge is provided
+        if 'num_submits_to_converge' in \
+                    parameters['EnergyCode']['vasp']:
+            num_submits_to_converge = \
+             parameters['EnergyCode']['vasp']['num_submits_to_converge']
+            if not isinstance(num_submits_to_converge, int):
+                print ('Error: Parameter num_submits_to_converge '
+                                            'should be an integer.')
+                print ('Quitting...')
+                quit()
+        else:
+            print ('No "num_submits_to_converge" option given. '
+                   'Using default maximum value of 2 VASP'
+                   ' calculations done on an organism to converge.')
+            num_submits_to_converge = 2
+        # check if num_rerelax is provided
+        num_rerelax = 0
+        if 'num_rerelax' in parameters['EnergyCode']['vasp']:
+            num_rerelax = parameters['EnergyCode']['vasp']['num_rerelax']
+            if not isinstance(num_rerelax, int):
+                print ('Error: Parameter num_rerelax should be an integer.')
+                print ('Quitting...')
+                quit()
+
+        print ('VASP calculations on a structure: \n'
+               'for energy convergence: {}  and\n'
+               'for (re-)relaxation: {}'.format(num_submits_to_converge, num_rerelax))
+
         return energy_calculators.VaspEnergyCalculator(
-                incar_path, kpoints_path, potcar_paths, geometry)
+                    incar_path, kpoints_path,
+                    potcar_paths, geometry,
+                    num_submits_to_converge=num_submits_to_converge,
+                    num_rerelax=num_rerelax)
 
 
 def make_stopping_criteria(parameters, composition_space):

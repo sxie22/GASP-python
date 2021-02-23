@@ -1,0 +1,52 @@
+RunTitle: default
+
+CompositionSpace:
+    - Si
+
+EnergyCode:
+    vasp:
+        incar: <path to INCAR>
+        kpoints: <path to KPOINTS>
+        potcars:
+            Si: <path to POTCARs of each species in composition space>
+
+NumCalcsAtOnce: 10
+
+InitialPopulation:
+    from_files:
+        number: 10
+        path_to_folder: <path to a folder containing initial structures>
+    random:
+        number: 20
+
+Pool:
+    size: 20
+
+Constraints:
+    min_num_atoms: 2
+    max_num_atoms: 16
+    max_interface_atoms: 51
+    max_lattice_length: 14
+
+LatticeMatch:
+    max_area: 65
+    max_mismatch: 0.06
+    max_angle_diff: 2
+    r1r2_tol: 0.04
+    separation: 1.5
+    nlayers_substrate: 1
+    nlayers_2d: 1
+    sd_layers: 0
+
+Substrate_prim_calc:
+    E_sub_prim: -12.849050
+    n_sub_prim: 3
+
+
+Geometry:
+    shape: interface
+    max_size: 2.4
+    padding: 12
+
+StoppingCriteria:
+    num_energy_calcs: 80

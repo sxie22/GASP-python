@@ -19,18 +19,24 @@ do_energy_calculation() method.
 3. GulpEnergyCalculator: for using GULP to compute energies
 
 """
+import sys
 
 from gasp.general import Cell
 
 from pymatgen.core.lattice import Lattice
 from pymatgen.core.periodic_table import Element
+from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.lammps.data import LammpsData, LammpsBox, ForceField, Topology
 import pymatgen.command_line.gulp_caller as gulp_caller
+
+import numpy as np
 
 import shutil
 import subprocess
 import os
 import collections
+
+from time import sleep
 
 
 class VaspEnergyCalculator(object):
@@ -38,7 +44,8 @@ class VaspEnergyCalculator(object):
     Calculates the energy of an organism using VASP.
     """
 
-    def __init__(self, incar_file, kpoints_file, potcar_files, geometry):
+    def __init__(self, incar_file, kpoints_file, potcar_files, geometry,
+                num_submits_to_converge=2, num_rerelax=0):
         '''
         Makes a VaspEnergyCalculator.
 
@@ -60,22 +67,32 @@ class VaspEnergyCalculator(object):
         self.kpoints_file = kpoints_file
         self.potcar_files = potcar_files
 
-    def do_energy_calculation(self, organism, dictionary, key,
-                              composition_space):
+        # max number of times to submit an organism to converge a relaxation
+        self.num_submits_to_converge = num_submits_to_converge
+        # Number of times to submit after converged - to re-relax
+        self.num_rerelax = num_rerelax
+
+    def do_energy_calculation(self, organism,
+                              composition_space, E_sub_prim=None,
+                              n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0):
         """
-        Calculates the energy of an organism using VASP, and stores the relaxed
-        organism in the provided dictionary at the provided key. If the
-        calculation fails, stores None in the dictionary instead.
+        Calculates the energy of an organism using VASP, and returns the relaxed
+        organism. If the calculation fails, returns None.
 
         Args:
             organism: the Organism whose energy we want to calculate
 
-            dictionary: a dictionary in which to store the relaxed Organism
-
-            key: the key specifying where to store the relaxed Organism in the
-                dictionary
-
             composition_space: the CompositionSpace of the search
+
+            E_sub_prim (float): (interface geometry only) total energy of
+            primitive substrate slab
+
+            n_sub_prim (float): (interface geometry only) number of layers of
+            atoms in primitive substrate slab
+
+            mu_A, mu_B, mu_C (floats): (interface geometry only) Chemical
+            potentials of species A, B, C (ordered based on increasing
+            electronegativities)
 
         Precondition: the garun directory and temp subdirectory exist, and we
             are currently located inside the garun directory
@@ -92,13 +109,21 @@ class VaspEnergyCalculator(object):
         shutil.copy(self.kpoints_file, job_dir_path)
 
         # sort the organism's cell and write to POSCAR file
-        organism.cell.sort()
-        organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
+        if E_sub_prim is not None and n_sub_prim is not None:
+            cell = organism.cell
+            n_sub = organism.n_sub
+            self.write_poscar(cell, n_sub, job_dir_path)
+        else:
+            organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR')
 
+        # potcar now may contain same species more than once in the order
+        # if it exists in poscar
         # get a list of the element symbols in the sorted order
         symbols = []
         for site in organism.cell.sites:
-            if site.specie.symbol not in symbols:
+            if len(symbols) == 0 :
+                symbols.append(site.specie.symbol)
+            elif site.specie.symbol not in symbols[-1]:
                 symbols.append(site.specie.symbol)
 
         # write the POTCAR file by concatenating the appropriate elemental
@@ -112,14 +137,58 @@ class VaspEnergyCalculator(object):
 
         # run 'callvasp' script as a subprocess to run VASP
         print('Starting VASP calculation on organism {} '.format(organism.id))
-        devnull = open(os.devnull, 'w')
-        try:
-            subprocess.call(['callvasp', job_dir_path], stdout=devnull,
-                            stderr=devnull)
-        except:
-            print('Error running VASP on organism {} '.format(organism.id))
-            dictionary[key] = None
-            return
+        for i in range(self.num_submits_to_converge):
+            devnull = open(os.devnull, 'w')
+            try:
+                subprocess.call(['callvasp', job_dir_path], stdout=devnull,
+                                stderr=devnull)
+            except:
+                print('Error running VASP on organism {} '.format(organism.id))
+                return None
+
+            # check if the VASP calculation converged
+            converged = False
+            with open(job_dir_path + '/OUTCAR') as f:
+                for line in f:
+                    if 'reached' in line and 'required' in line and \
+                            'accuracy' in line:
+                        converged = True
+            if converged:
+                break
+            else:
+                if not i == self.num_submits_to_converge - 1:
+                    self.rearrange_files(i+1, job_dir_path)
+
+        # check if need to re-relax the converged structure
+        if self.num_rerelax > 0:
+            for i in range(self.num_rerelax):
+                # start indexing the calculation after
+                # self.num_submits_to_converge
+                ind = self.num_submits_to_converge + i + 1
+                if ind > 1:
+                    self.rearrange_files(ind, job_dir_path)
+                devnull = open(os.devnull, 'w')
+                try:
+                    subprocess.call(['callvasp', job_dir_path], stdout=devnull,
+                                    stderr=devnull)
+                except:
+                    print('Error running VASP on organism {} '.format(
+                                                        organism.id))
+                    return None
+
+        # check if converged again (useful when
+        # self.num_submits_to_converge = 0)
+        converged = False
+        with open(job_dir_path + '/OUTCAR') as f:
+            for line in f:
+                if 'reached' in line and 'required' in line and \
+                        'accuracy' in line:
+                    converged = True
+
+        if not converged:
+            print('VASP relaxation of organism {} did not converge '.format(
+                    organism.id))
+            return None
 
         # parse the relaxed structure from the CONTCAR file
         try:
@@ -127,21 +196,7 @@ class VaspEnergyCalculator(object):
         except:
             print('Error reading structure of organism {} from CONTCAR '
                   'file '.format(organism.id))
-            dictionary[key] = None
-            return
-
-        # check if the VASP calculation converged
-        converged = False
-        with open(job_dir_path + '/OUTCAR') as f:
-            for line in f:
-                if 'reached' in line and 'required' in line and \
-                        'accuracy' in line:
-                    converged = True
-        if not converged:
-            print('VASP relaxation of organism {} did not converge '.format(
-                organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # parse the internal energy and pV (if needed) and compute the enthalpy
         pv = 0
@@ -153,12 +208,104 @@ class VaspEnergyCalculator(object):
                     pv = float(line.split()[-1])
         enthalpy = u + pv
 
+        # new relaxed_cell, total_energy, epa, ef_ads are attributed
+        # old n_sub and others are still carried
         organism.cell = relaxed_cell
         organism.total_energy = enthalpy
-        organism.epa = enthalpy/organism.cell.num_sites
-        print('Setting energy of organism {} to {} '
-              'eV/atom '.format(organism.id, organism.epa))
-        dictionary[key] = organism
+
+
+        # If substrate search,
+        # objective function based on chemical potentials species in 2D film
+        if all([E_sub_prim, n_sub_prim]):
+            n_iface = relaxed_cell.num_sites
+            n_sub = organism.n_sub
+            factor = n_sub/n_sub_prim
+            cell_area = relaxed_cell.surface_area()
+
+            # Species at each site in twod film
+            film_species = relaxed_cell.species[-(n_iface - n_sub):]
+
+            # Get the species from composition_space
+            species_dict = composition_space.species_dict
+            specie_A = species_dict['specie_A']
+            if 'specie_B' in species_dict:
+                specie_B = species_dict['specie_B']
+            if 'specie_C' in species_dict:
+                specie_C = species_dict['specie_C']
+
+            # Count the num of each species
+            num_A = film_species.count(specie_A)
+            ref_en_A = num_A * mu_A
+            # set num B and num C to zero to satisy ef equation
+            ref_en_B, ref_en_C = 0, 0
+            num_B, num_C = 0, 0
+            if len(species_dict.keys()) > 1:
+                num_B = film_species.count(specie_B)
+                ref_en_B = num_B * mu_B
+            if len(species_dict.keys()) > 2:
+                num_C = film_species.count(specie_C)
+                ref_en_C = num_C * mu_C
+
+            ef = (enthalpy - factor * E_sub_prim - ref_en_A - ref_en_B \
+                                            - ref_en_C) / cell_area
+            # Set the formation energy from chemical potentials as epa
+            # NOTE: This tricks the algorithm to calculate fitness based on
+            # ef values
+            organism.total_energy = enthalpy - factor * E_sub_prim
+            print ('Setting total_energy of the organism {} with '
+                   'total_adsorption_energy of the 2D film, {} eV'.format(
+                   organism.id, organism.total_energy
+                   ))
+            organism.epa = ef
+            print ('Setting epa of the organism {} with 2D film formation '
+                   'energy, {} eV/A^2 '.format(organism.id, organism.epa))
+
+        else:
+            organism.epa = enthalpy/organism.cell.num_sites
+            print('Setting energy (epa) of organism {} to {} '
+                  'eV/atom '.format(organism.id, organism.epa))
+
+        return organism
+
+
+    def write_poscar(self, iface, n_sub, job_dir_path):
+        '''
+        Writes POSCAR of the interface with sd flags and comment line in job dir
+
+        Args:
+            iface: (obj) interface structure for which Poscar is to be written
+
+            n_sub: (int) number of substrate atoms in interface
+
+            job_dir_path: Path of job submit directory
+
+        '''
+        n_iface = iface.num_sites
+        n_twod = n_iface - n_sub
+        comment = 'N_sub %d    N_twod %d' % (n_sub, n_twod)
+
+        poscar = Poscar(iface, comment)
+        poscar.write_file(filename=job_dir_path + '/POSCAR')
+
+    def rearrange_files(self, i, job_dir_path):
+        """
+        Rename the CONTCAR to POSCAR
+        Save output files with index
+
+        Args:
+
+        i (int): index of the vasp submit
+
+        job_dir_path (str): path to vasp job directory
+        """
+        os.rename(job_dir_path+'/POSCAR', job_dir_path+'/POSCAR_{}'.format(i))
+        os.rename(job_dir_path+'/CONTCAR', job_dir_path+'/POSCAR')
+
+        os.rename(job_dir_path+'/OSZICAR', job_dir_path+'/OSZICAR_{}'.format(i))
+        os.rename(job_dir_path+'/OUTCAR', job_dir_path+'/OUTCAR_{}'.format(i))
+        # Add any other outputs to save here before resubmitting
+        os.remove(job_dir_path+'/WAVECAR')
+        os.remove(job_dir_path+'/CHGCAR')
 
 
 class LammpsEnergyCalculator(object):
@@ -183,22 +330,27 @@ class LammpsEnergyCalculator(object):
         # the path to the lammps input script
         self.input_script = input_script
 
-    def do_energy_calculation(self, organism, dictionary, key,
-                              composition_space):
+    def do_energy_calculation(self, organism,
+                              composition_space, E_sub_prim=None,
+                              n_sub_prim=None, mu_A=0, mu_B=0, mu_C=0):
         """
-        Calculates the energy of an organism using LAMMPS, and stores the
-        relaxed organism in the provided dictionary at the provided key. If the
-        calculation fails, stores None in the dictionary instead.
+        Calculates the energy of an organism using LAMMPS, and returns the
+        relaxed organism. If the calculation fails, returns None.
 
         Args:
             organism: the Organism whose energy we want to calculate
 
-            dictionary: a dictionary in which to store the relaxed Organism
-
-            key: the key specifying where to store the relaxed Organism in the
-                dictionary
-
             composition_space: the CompositionSpace of the search
+
+            E_sub_prim (float): (interface geometry only) total energy of
+            primitive substrate slab
+
+            n_sub_prim (float): (interface geometry only) number of layers of
+            atoms in primitive substrate slab
+
+            mu_A, mu_B, mu_C (floats): (interface geometry only) Chemical
+            potentials of species A, B, C (ordered based on increasing
+            electronegativities)
 
         Precondition: the garun directory and temp subdirectory exist, and we
             are currently located inside the garun directory
@@ -213,12 +365,19 @@ class LammpsEnergyCalculator(object):
         script_name = os.path.basename(self.input_script)
         input_script_path = job_dir_path + '/' + str(script_name)
 
+        # For substrate calculations, the cell is already matched
+
         # write the in.data file
         self.conform_to_lammps(organism.cell)
         self.write_data_file(organism, job_dir_path, composition_space)
 
         # write out the unrelaxed structure to a poscar file
-        organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR.' +
+        if E_sub_prim is not None and n_sub_prim is not None:
+            cell = organism.cell
+            n_sub = organism.n_sub
+            self.write_poscar(cell, n_sub, job_dir_path)
+        else:
+            organism.cell.to(fmt='poscar', filename=job_dir_path + '/POSCAR.' +
                          str(organism.id) + '_unrelaxed')
 
         # run 'calllammps' script as a subprocess to run LAMMPS
@@ -234,8 +393,7 @@ class LammpsEnergyCalculator(object):
             with open(job_dir_path + '/log.lammps', 'w') as log_file:
                 log_file.write(e.output.decode('utf-8'))
             print('Error running LAMMPS on organism {} '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # write the LAMMPS output
         with open(job_dir_path + '/log.lammps', 'w') as log_file:
@@ -253,8 +411,7 @@ class LammpsEnergyCalculator(object):
         except:
             print('Error reading structure of organism {} from LAMMPS '
                   'output '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # parse the total energy from the log.lammps file
         try:
@@ -262,8 +419,7 @@ class LammpsEnergyCalculator(object):
         except:
             print('Error reading energy of organism {} from LAMMPS '
                   'output '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # check that the total energy isn't unphysically large
         # (can be a problem for empirical potentials)
@@ -271,15 +427,64 @@ class LammpsEnergyCalculator(object):
         if epa < -50:
             print('Discarding organism {} due to unphysically large energy: '
                   '{} eV/atom.'.format(organism.id, str(epa)))
-            dictionary[key] = None
-            return
+            return None
 
         organism.cell = relaxed_cell
         organism.total_energy = total_energy
         organism.epa = epa
-        print('Setting energy of organism {} to {} eV/atom '.format(
-            organism.id, organism.epa))
-        dictionary[key] = organism
+
+        # If substrate search, obtain obj fn ef_ads
+        enthalpy = total_energy
+        if E_sub_prim is not None and n_sub_prim is not None:
+            n_iface = relaxed_cell.num_sites
+            n_sub = organism.n_sub
+            factor = n_sub/n_sub_prim
+            cell_area = relaxed_cell.surface_area()
+
+            # Species at each site in twod film
+            film_species = relaxed_cell.species[-(n_iface - n_sub):]
+
+            # Get the species from composition_space
+            species_dict = composition_space.species_dict
+            specie_A = species_dict['specie_A']
+            if 'specie_B' in species_dict:
+                specie_B = species_dict['specie_B']
+            if 'specie_C' in species_dict:
+                specie_C = species_dict['specie_C']
+
+            # Count the num of each species
+            num_A = film_species.count(specie_A)
+            ref_en_A = num_A * mu_A
+            # set num B and num C to zero to satisy ef equation
+            ref_en_B, ref_en_C = 0, 0
+            num_B, num_C = 0, 0
+            if len(species_dict.keys()) > 1:
+                num_B = film_species.count(specie_B)
+                ref_en_B = num_B * mu_B
+            if len(species_dict.keys()) > 2:
+                num_C = film_species.count(specie_C)
+                ref_en_C = num_C * mu_C
+
+            ef = (enthalpy - factor * E_sub_prim - ref_en_A - ref_en_B \
+                                            - ref_en_C) / cell_area
+
+            # Set the formation energy from chemical potentials as epa
+            # NOTE: This tricks the algorithm to calculate fitness based on
+            # ef values
+            organism.total_energy = enthalpy - factor * E_sub_prim
+            print ('Setting total_energy of the organism {} with '
+                   'total_adsorption_energy of the 2D film, {} eV'.format(
+                   organism.id, organism.total_energy
+                   ))
+            organism.epa = ef
+            print ('Setting epa of the organism {} with 2D film formation '
+                   'energy, {} eV/A^2 '.format(organism.id, organism.epa))
+
+        else:
+            print('Setting energy of organism {} to {} eV/atom '.format(
+                        organism.id, organism.epa))
+
+        return organism
 
     def conform_to_lammps(self, cell):
         """
@@ -370,7 +575,7 @@ class LammpsEnergyCalculator(object):
             for symbol in element_symbols:
                 elements_dict[symbol] = Element(symbol)
 
-        # make a LammpsData object and use it write the in.data file
+         # make a LammpsData object and use it write the in.data file
         force_field = ForceField(elements_dict.items())
         topology = Topology(organism.cell.sites)
         lammps_data = LammpsData.from_ff_and_topologies(
@@ -492,6 +697,25 @@ class LammpsEnergyCalculator(object):
                 energy = float(lines[i + 2].split()[4])
         return energy
 
+    def write_poscar(self, iface, n_sub, job_dir_path):
+        '''
+        Writes POSCAR of the interface with sd flags and comment line in job dir
+
+        Args:
+            iface: (obj) interface structure for which Poscar is to be written
+
+            n_sub: (int) number of substrate atoms in interface
+
+            job_dir_path: Path of job submit directory
+
+        '''
+        n_iface = iface.num_sites
+        n_twod = n_iface - n_sub
+        comment = 'N_sub %d    N_twod %d' % (n_sub, n_twod)
+
+        poscar = Poscar(iface, comment)
+        poscar.write_file(filename=job_dir_path + '/POSCAR')
+
 
 class GulpEnergyCalculator(object):
     """
@@ -574,20 +798,13 @@ class GulpEnergyCalculator(object):
                 cations_shell = True
         return anions_shell, cations_shell
 
-    def do_energy_calculation(self, organism, dictionary, key,
-                              composition_space):
+    def do_energy_calculation(self, organism, composition_space):
         """
-        Calculates the energy of an organism using GULP, and stores the relaxed
-        organism in the provided dictionary at the provided key. If the
-        calculation fails, stores None in the dictionary instead.
+        Calculates the energy of an organism using GULP, and returns the relaxed
+        organism. If the calculation fails, returns None.
 
         Args:
             organism: the Organism whose energy we want to calculate
-
-            dictionary: a dictionary in which to store the relaxed Organism
-
-            key: the key specifying where to store the relaxed Organism in the
-                dictionary
 
             composition_space: the CompositionSpace of the search
 
@@ -622,8 +839,7 @@ class GulpEnergyCalculator(object):
                       'w') as gout_file:
                 gout_file.write(e.output.decode('utf-8'))
             print('Error running GULP on organism {} '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # write the GULP output for the user's reference
         with open(job_dir_path + '/' + str(organism.id) + '.gout',
@@ -636,8 +852,7 @@ class GulpEnergyCalculator(object):
         if conv_err_string in gulp_output and gradient_norm > 0.1:
             print('The GULP calculation on organism {} did not '
                   'converge '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # parse the relaxed structure from the gulp output
         try:
@@ -646,8 +861,7 @@ class GulpEnergyCalculator(object):
         except:
             print('Error reading structure of organism {} from GULP '
                   'output '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # parse the total energy from the gulp output
         try:
@@ -655,8 +869,7 @@ class GulpEnergyCalculator(object):
         except:
             print('Error reading energy of organism {} from GULP '
                   'output '.format(organism.id))
-            dictionary[key] = None
-            return
+            return None
 
         # sometimes gulp takes a supercell
         num_atoms = self.get_num_atoms(gulp_output)
@@ -666,7 +879,7 @@ class GulpEnergyCalculator(object):
         organism.total_energy = organism.epa*organism.cell.num_sites
         print('Setting energy of organism {} to {} eV/atom '.format(
             organism.id, organism.epa))
-        dictionary[key] = organism
+        return organism
 
     def write_input_file(self, organism, gin_path):
         """

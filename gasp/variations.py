@@ -140,6 +140,12 @@ class Mating(object):
         else:
             self.merge_cutoff = mating_params['merge_cutoff']
 
+        # used to optionally half large area offspring cells
+        if 'halve_offspring_prob' in mating_params:
+            self.halve_offspring_prob = mating_params['halve_offspring_prob']
+        else:
+            self.halve_offspring_prob = 0.25 # default
+
     def do_variation(self, pool, random, geometry, constraints, id_generator,
                      composition_space):
         """
@@ -218,6 +224,15 @@ class Mating(object):
         cell_1 = copy.deepcopy(parent1.cell)
         cell_2 = copy.deepcopy(parent2.cell)
 
+        # For interface goemetry, get the primitive cells of either one or
+        # both the parent cells. This is to allow large area low energy
+        # structures to mate within constraints of lattice lenghts. Else,
+        # the generated offspring often fails lattice length or area in
+        # make_offspring_cell()
+        if geometry.shape == 'interface':
+            cell_1 = cell_1.get_primitive_structure()
+            cell_2 = cell_2.get_primitive_structure()
+
         # optionally double one of the parents
         if random.random() < self.doubling_prob:
             if cell_1.lattice.volume < cell_2.lattice.volume:
@@ -240,6 +255,7 @@ class Mating(object):
         # make the offspring organism from the offspring cell
         offspring = Organism(offspring_cell, id_generator, self.name,
                              composition_space)
+        offspring.parents = (parent1.id, parent2.id)
         print('Creating offspring organism {} from parent organisms {} and {} '
               'with the mating variation '.format(offspring.id, parent1.id,
                                                   parent2.id))
@@ -266,7 +282,7 @@ class Mating(object):
             abc_lengths = cell.lattice.abc
             smallest_vector = min(abc_lengths)
             doubling_index = abc_lengths.index(smallest_vector)
-        elif geometry.shape == 'sheet':
+        elif geometry.shape == 'sheet' or geometry.shape == 'interface':
             ab_lengths = [cell.lattice.a, cell.lattice.b]
             smallest_vector = min(ab_lengths)
             doubling_index = ab_lengths.index(smallest_vector)
@@ -281,6 +297,14 @@ class Mating(object):
             scaling_factors[doubling_index] = 2
             cell.make_supercell(scaling_factors)
 
+    def surface_area(self, cell):
+        """
+        Helper function
+        Calculates the surface area of the Cell
+        """
+        m = cell.lattice.matrix
+        return np.linalg.norm(np.cross(m[0], m[1]))
+
     def grow_parent_cell(self, parent_cell_1, parent_cell_2, geometry, random):
         """
         Modifies the smaller parent cell by taking supercells until it is the
@@ -294,17 +318,31 @@ class Mating(object):
             geometry: the Geometry of the search
 
             random: copy of Python's PRNG
+
+        EDIT (CK):
+        use volume_ratio in num_doubles for bulk geometry
+        use area_ratio in num_doubles for sheet geometry
+        use length_ratio in num_doubles for wire geometry
         """
 
-        vol_1 = parent_cell_1.lattice.volume
-        vol_2 = parent_cell_2.lattice.volume
-        if vol_1 < vol_2:
-            volume_ratio = vol_2/vol_1
+        if geometry.shape == 'bulk':
+            value_1 = parent_cell_1.lattice.volume
+            value_2 = parent_cell_2.lattice.volume
+        elif geometry.shape == 'sheet' or geometry.shape == 'interface':
+            value_1 = self.surface_area(parent_cell_1)
+            value_2 = self.surface_area(parent_cell_2)
+        elif geometry.shape == 'wire':
+            value_1 = parent_cell_1.lattice.c
+            value_2 = parent_cell_2.lattice.c
+
+        if value_1 < value_2:
+            value_ratio = value_2/value_1
             parent_to_grow = parent_cell_1
         else:
-            volume_ratio = vol_1/vol_2
+            value_ratio = value_1/value_2
             parent_to_grow = parent_cell_2
-        num_doubles = self.get_num_doubles(volume_ratio)
+
+        num_doubles = self.get_num_doubles(value_ratio)
         for _ in range(num_doubles):
             self.double_parent(parent_to_grow, geometry)
 
@@ -391,11 +429,11 @@ class Mating(object):
             # get the site contributions of each parent
             for site in parent_cell_1.sites:
                 if site.frac_coords[cut_vector_index] <= cut_location:
-                    species_from_parent_1.append(site.species_and_occu)
+                    species_from_parent_1.append(site.species)
                     frac_coords_from_parent_1.append(site.frac_coords)
             for site in parent_cell_2.sites:
                 if site.frac_coords[cut_vector_index] > cut_location:
-                    species_from_parent_2.append(site.species_and_occu)
+                    species_from_parent_2.append(site.species)
                     frac_coords_from_parent_2.append(site.frac_coords)
 
         # combine the information for the sites contributed by each parent
@@ -406,17 +444,29 @@ class Mating(object):
         # compute the lattice vectors of the offspring
         offspring_lengths = 0.5*(np.array(parent_cell_1.lattice.abc) +
                                  np.array(parent_cell_2.lattice.abc))
+        a_off, b_off, c_off = offspring_lengths
         offspring_angles = 0.5*(np.array(parent_cell_1.lattice.angles) +
                                 np.array(parent_cell_2.lattice.angles))
-        offspring_lattice = Lattice.from_lengths_and_angles(offspring_lengths,
-                                                            offspring_angles)
-
+        alpha, beta, gamma = offspring_angles
+        offspring_lattice = Lattice.from_parameters(a_off, b_off, c_off,
+                                                            alpha, beta, gamma)
         # make the offspring cell
-        return Cell(offspring_lattice, offspring_species,
-                    offspring_frac_coords)
+        offspring_cell = Cell(offspring_lattice, offspring_species,
+                              offspring_frac_coords)
 
-    def do_random_shift(self, cell, lattice_vector_index, geometry,
-                        random):
+        # optionally halve the offspring cell when area is too large to reduce
+        # monotony of large area structures in newly created offspring (happens
+        # as the interface search progresses.)
+        if geometry.shape == 'interface':
+            area = self.surface_area(offspring_cell)
+            if area > constraints.max_area / 2:
+                if random.random() < self.halve_offspring_prob:
+                    offspring_cell = self.halve_offspring(offspring_cell,
+                                                          cut_vector_index)
+
+        return offspring_cell
+
+    def do_random_shift(self, cell, lattice_vector_index, geometry, random):
         """
         Modifies a cell by shifting the atoms along one of the lattice
         vectors. Makes sure all the atoms lie inside the cell after the shift
@@ -441,7 +491,8 @@ class Mating(object):
             pass
         elif geometry.shape == 'wire' and lattice_vector_index != 2:
             pass
-        elif geometry.shape == 'sheet' and lattice_vector_index == 2:
+        elif geometry.shape == 'sheet' or geometry.shape == 'interface' \
+                                                and lattice_vector_index == 2:
             pass
         else:
             # do the shift
@@ -485,10 +536,12 @@ class Mating(object):
 
             geometry: the Geometry of the search
 
+            constraints: the Constraints of the search
+
             random: copy of Python's built in PRNG
         """
 
-        if geometry.shape == 'bulk' or geometry.shape == 'sheet':
+        if geometry.shape in {'bulk', 'sheet', 'interface'}:
             pass
         else:
             geometry.pad(cell, padding=100)
@@ -500,7 +553,8 @@ class Mating(object):
                 self.rotate_about_axis(cell, [0, 0, 1], random.random()*360)
             cell.translate_atoms_into_cell()
             cell.rotate_to_principal_directions()
-            geometry.unpad(cell, constraints)
+            n_sub = None
+            geometry.unpad(cell, n_sub, constraints)
 
     def rotate_about_axis(self, cell, axis, angle):
         """
@@ -598,7 +652,8 @@ class Mating(object):
 
         # make a new cell and unpad it
         new_cell = Cell(cell.lattice, species, frac_coords)
-        geometry.unpad(new_cell, constraints)
+        n_sub = None
+        geometry.unpad(new_cell, n_sub, constraints)
 
         # if any merges were done, call merge_sites recursively on the new
         # cell
@@ -607,6 +662,41 @@ class Mating(object):
         else:
             return new_cell
 
+    def halve_offspring(self, offspring_cell, mated_vector_index):
+        """
+        Half the cell along the lattice vector direction that is not
+        lattice_vector_index. Remove one half and return the other.
+        Args:
+        offspring_cell: newly created offspring cell (by mating variation)
+
+        mated_vector_index: (0 or 1) the lattice vector along which slicing
+                            is made in the mating variation for this offspring
+        """
+        halve_index = 0
+        # opposite of mated lattice vector for offspring
+        if mated_vector_index == 0: # can only be 0 or 1
+            halve_index = 1
+        latt_mat = offspring_cell.lattice.matrix
+        new_latt = latt_mat.copy()
+        new_latt[halve_index] = latt_mat[halve_index] / 2
+        new_latt = Lattice(new_latt)
+
+        offspring_species = []
+        offspring_cart_coords = []
+        for site in offspring_cell.sites:
+            if site.frac_coords[halve_index] <= 0.5:
+                offspring_species.append(site.specie)
+                offspring_cart_coords.append(site.coords)
+
+        halved_offspring_cell = Cell(new_latt, offspring_species,
+                            offspring_cart_coords, coords_are_cartesian=True)
+        # Sometimes, the halved cell does not have any atoms
+        # Then return original offspring_cell
+        if halved_offspring_cell.num_sites == 0:
+            #print ('Halved offpsring cell is empty, so not halving!')
+            return offspring_cell
+        else:
+            return halved_offspring_cell
 
 class StructureMut(object):
     """
@@ -707,6 +797,8 @@ class StructureMut(object):
 
             geometry: the Geometry of the search
 
+            constraints: the Constraints of the search
+
             id_generator: the IDGenerator used to assign id numbers to all
                 organisms
 
@@ -752,6 +844,7 @@ class StructureMut(object):
 
         # create a new organism from the perturbed cell
         offspring = Organism(cell, id_generator, self.name, composition_space)
+        offspring.parents = (parent_org.id)
         print('Creating offspring organism {} from parent organism {} with '
               'the structure mutation variation '.format(offspring.id,
                                                          parent_org.id))
@@ -806,7 +899,8 @@ class StructureMut(object):
                     frac_coords=False, to_unit_cell=True)
 
         # unpad the cell
-        geometry.unpad(cell, constraints)
+        n_sub = None
+        geometry.unpad(cell, n_sub, constraints)
 
     def perturb_lattice_vectors(self, cell, random):
         """
@@ -846,7 +940,7 @@ class StructureMut(object):
         new_b = strain_matrix.dot(cell.lattice.matrix[1])
         new_c = strain_matrix.dot(cell.lattice.matrix[2])
         new_lattice = Lattice([new_a, new_b, new_c])
-        cell.modify_lattice(new_lattice)
+        cell.lattice = new_lattice
 
 
 class NumAtomsMut(object):
@@ -920,6 +1014,8 @@ class NumAtomsMut(object):
 
             geometry: the Geometry of the search
 
+            constraints: the Constraints of the search
+
             id_generator: the IDGenerator used to assign id numbers to all
                 organisms
 
@@ -961,14 +1057,14 @@ class NumAtomsMut(object):
 
         # add or remove atoms
         # if fixed composition search
-        if composition_space.objective_function == 'epa':
+        if len(composition_space.endpoints) == 1:
             if num_adds > 0:
                 self.add_atoms_epa(cell, num_adds, random)
             elif num_adds < 0:
                 self.remove_atoms_epa(cell, -1*num_adds, random)
 
         # if phase diagram search
-        elif composition_space.objective_function == 'pd':
+        elif len(composition_space.endpoints) > 1:
             if num_adds > 0:
                 self.add_atoms_pd(cell, num_adds, composition_space, random)
             elif num_adds < 0:
@@ -987,6 +1083,7 @@ class NumAtomsMut(object):
 
         # create a new organism from the cell
         offspring = Organism(cell, id_generator, self.name, composition_space)
+        offspring.parents = (parent_org.id)
         print('Creating offspring organism {} from parent organism {} with '
               'the number of atoms mutation variation '.format(
                   offspring.id, parent_org.id))
@@ -1009,9 +1106,9 @@ class NumAtomsMut(object):
                                           self.sigma_num_adds)))
         # keep trying until we get a valid number
         while num_adds == 0 or \
-            (composition_space.objective_function == 'epa' and num_adds*-1 >=
+            (len(composition_space.endpoints) == 1 and num_adds*-1 >=
              cell.num_sites/composition_space.endpoints[0].num_atoms) or \
-            (composition_space.objective_function == 'pd' and
+            (len(composition_space.endpoints) > 1 and
                 num_adds*-1 >= cell.num_sites):
             num_adds = int(round(random.gauss(self.mu_num_adds,
                                               self.sigma_num_adds)))
@@ -1214,6 +1311,8 @@ class Permutation(object):
 
             geometry: the Geometry of the search
 
+            constraints: the Constraints of the search
+
             id_generator: the IDGenerator used to assign id numbers to all
                 organisms
 
@@ -1265,6 +1364,7 @@ class Permutation(object):
 
         # make a new organism from the cell
         offspring = Organism(cell, id_generator, self.name, composition_space)
+        offspring.parents = (parent_org.id)
         print('Creating offspring organism {} from parent organism {} with '
               'the permutation variation '.format(offspring.id, parent_org.id))
         return offspring

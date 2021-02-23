@@ -280,8 +280,12 @@ class RandomOrganismCreator(object):
             random: a copy of Python's built in PRNG
         """
         if composition_space.objective_function == 'epa':
-            return self.get_epa_species_list(composition_space, constraints,
-                                             random)
+            if len(composition_space.endpoints) == 1:
+                return self.get_epa_species_list(composition_space, constraints,
+                                                 random)
+            else:
+                return self.get_pd_species_list(composition_space, constraints,
+                                                random)
         elif composition_space.objective_function == 'pd':
             return self.get_pd_species_list(composition_space, constraints,
                                             random)

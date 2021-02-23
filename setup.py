@@ -10,12 +10,12 @@ module_dir = os.path.dirname(os.path.abspath(__file__))
 if __name__ == "__main__":
     setup(
         name='GASP',
-        version='0.1',
+        version='1.0',
         description='Genetic algorithm for structure and phase prediction',
         long_description=open(os.path.join(module_dir, 'README.rst')).read(),
         url='https://github.com/henniggroup/GASP-python',
-        author='Benjamin Revard',
-        author_email='bcr48@cornell.edu',
+        author='Benjamin Revard, Venkata Surya Chaitanya Kolluru',
+        author_email='kvs.chaitanya@ufl.edu',
         license='MIT',
         packages=find_packages(),
         package_data={},

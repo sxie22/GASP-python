@@ -26,6 +26,7 @@ from pymatgen.core.lattice import Lattice
 from pymatgen.core.sites import Site
 
 import numpy as np
+import copy
 
 
 class Bulk(object):
@@ -56,7 +57,7 @@ class Bulk(object):
 
         pass
 
-    def unpad(self, cell, constraints):
+    def unpad(self, cell, n_sub, constraints):
         '''
         Does nothing.
 
@@ -158,7 +159,7 @@ class Sheet(object):
                                   [0.0, 0.0, layer_thickness + pad_amount]])
 
         # modify the cell to correspond to the padded lattice
-        cell.modify_lattice(padded_lattice)
+        cell.lattice = padded_lattice
         site_indices = []
         for i in range(len(cell.sites)):
             site_indices.append(i)
@@ -178,7 +179,7 @@ class Sheet(object):
         cell.translate_sites(site_indices, translation_vector,
                              frac_coords=True, to_unit_cell=False)
 
-    def unpad(self, cell, constraints):
+    def unpad(self, cell, n_sub, constraints):
         '''
         Modifies a cell by removing vertical vacuum padding, leaving only
         enough to satisfy the per-species MID constraints, and makes the
@@ -204,7 +205,7 @@ class Sheet(object):
                                     [0.0, 0.0, layer_thickness + max_mid]])
 
         # modify the cell to correspond to the unpadded lattice
-        cell.modify_lattice(unpadded_lattice)
+        cell.lattice = unpadded_lattice
         site_indices = []
         for i in range(len(cell.sites)):
             site_indices.append(i)
@@ -324,7 +325,7 @@ class Wire(object):
                                   [0, y_extent + pad_amount, 0], [0, 0, cz]])
 
         # modify the cell to correspond to the padded lattice
-        cell.modify_lattice(padded_lattice)
+        cell.lattice = padded_lattice
         site_indices = []
         for i in range(len(cell.sites)):
             site_indices.append(i)
@@ -346,7 +347,7 @@ class Wire(object):
         cell.translate_sites(site_indices, translation_vector,
                              frac_coords=True, to_unit_cell=False)
 
-    def unpad(self, cell, constraints):
+    def unpad(self, cell, n_sub, constraints):
         '''
         Modifies a cell by removing horizontal vacuum padding around a wire,
         leaving only enough to satisfy the per-species MID constraints, and
@@ -355,6 +356,8 @@ class Wire(object):
 
         Args:
             cell: the Cell to unpad
+
+            n_sub: number of substrate atoms in the interface structure
 
             constraints: the Constraints of the search
         '''
@@ -377,7 +380,7 @@ class Wire(object):
                                     [0.0, 0.0, cz]])
 
         # modify the cell to correspond to the unpadded lattice
-        cell.modify_lattice(unpadded_lattice)
+        cell.lattice = unpadded_lattice
         site_indices = []
         for i in range(len(cell.sites)):
             site_indices.append(i)
@@ -512,7 +515,7 @@ class Cluster(object):
                                   [0, 0, z_extent + pad_amount]])
 
         # modify the cell to correspond to the padded lattice
-        cell.modify_lattice(padded_lattice)
+        cell.lattice = padded_lattice
         site_indices = []
         for i in range(len(cell.sites)):
             site_indices.append(i)
@@ -536,7 +539,7 @@ class Cluster(object):
         cell.translate_sites(site_indices, translation_vector,
                              frac_coords=True, to_unit_cell=False)
 
-    def unpad(self, cell, constraints):
+    def unpad(self, cell, n_sub, constraints):
         '''
         Modifies a cell by removing vacuum padding in every direction, leaving
         only enough to satisfy the per-species MID constraints, and makes the
@@ -544,6 +547,8 @@ class Cluster(object):
 
         Args:
             cell: the Cell to unpad
+
+            n_sub: number of substrate atoms in the interface structure
 
             constraints: the Constraints of the search
         '''
@@ -567,7 +572,7 @@ class Cluster(object):
                                     [0.0, 0.0, z_extent + max_mid]])
 
         # modify the cell to correspond to the unpadded lattice
-        cell.modify_lattice(unpadded_lattice)
+        cell.lattice = unpadded_lattice
         site_indices = []
         for i in range(len(cell.sites)):
             site_indices.append(i)
@@ -615,3 +620,192 @@ class Cluster(object):
                 if distance > max_distance:
                     max_distance = distance
         return max_distance
+
+class Substrate_2D(object):
+    '''
+    Contains data and operations specific to 2D structures on a substrate.
+    '''
+
+    def __init__(self, geometry_parameters):
+        '''
+        Makes a substrate-2D (interface) object, and sets default parameter
+        values if necessary.
+
+        Args:
+            geometry_parameters: a dictionary of parameters
+        '''
+
+        self.shape = 'interface'
+
+        # default values
+        self.default_max_size = np.inf
+        self.default_min_size = -np.inf
+        self.default_padding = 15
+
+        # parse the parameters, and set defaults if necessary
+        # max size
+        if 'max_size' not in geometry_parameters:
+            self.max_size = self.default_max_size
+        elif geometry_parameters['max_size'] in (None, 'default'):
+            self.max_size = self.default_max_size
+        else:
+            self.max_size = geometry_parameters['max_size']
+
+        # min size
+        if 'min_size' not in geometry_parameters:
+            self.min_size = self.default_min_size
+        elif geometry_parameters['min_size'] in (None, 'default'):
+            self.min_size = self.default_min_size
+        else:
+            self.min_size = geometry_parameters['min_size']
+
+        # padding
+        if 'padding' not in geometry_parameters:
+            self.padding = self.default_padding
+        elif geometry_parameters['padding'] in (None, 'default'):
+            self.padding = self.default_padding
+        else:
+            self.padding = geometry_parameters['padding']
+
+    def pad(self, cell, padding='from_geometry'):
+        '''
+        Same as Sheet.pad() method
+        Modifies a cell by adding vertical vacuum padding and making the
+        c-lattice vector normal to the plane of the sheet. The atoms are
+        shifted to the center of the padded sheet.
+
+        Args:
+            cell: the Cell to pad
+
+            padding: the amount of vacuum padding to add (in Angstroms). If not
+                set, then the value in self.padding is used.
+        '''
+
+        # get the padding amount
+        if padding == 'from_geometry':
+            pad_amount = self.padding
+        else:
+            pad_amount = padding
+
+        # make the padded lattice
+        cell.rotate_to_principal_directions()
+        species = cell.species
+        cartesian_coords = cell.cart_coords
+        cart_bounds = cell.get_bounding_box(cart_coords=True)
+        minz = cart_bounds[2][0]
+        maxz = cart_bounds[2][1]
+        layer_thickness = maxz - minz
+        ax = cell.lattice.matrix[0][0]
+        bx = cell.lattice.matrix[1][0]
+        by = cell.lattice.matrix[1][1]
+        padded_lattice = Lattice([[ax, 0.0, 0.0], [bx, by, 0.0],
+                                  [0.0, 0.0, layer_thickness + pad_amount]])
+
+        # modify the cell to correspond to the padded lattice
+        cell.lattice = padded_lattice
+        site_indices = []
+        for i in range(len(cell.sites)):
+            site_indices.append(i)
+        cell.remove_sites(site_indices)
+        for i in range(len(cartesian_coords)):
+            cell.append(species[i], cartesian_coords[i],
+                        coords_are_cartesian=True)
+
+        # translate the atoms back into the cell if needed, and shift them to
+        # the vertical center
+        cell.translate_atoms_into_cell()
+        frac_bounds = cell.get_bounding_box(cart_coords=False)
+        z_center = frac_bounds[2][0] + (frac_bounds[2][1] -
+                                        frac_bounds[2][0])/2
+        translation_vector = [0, 0, 0.5 - z_center]
+        site_indices = [i for i in range(len(cell.sites))]
+        cell.translate_sites(site_indices, translation_vector,
+                             frac_coords=True, to_unit_cell=False)
+
+    def unpad(self, cell, n_sub, constraints):
+        '''
+        Modifies the interface cell by removing the substrate atoms along with
+        vacuum padding, leaving only the 2D/adsorbate layer. Per species max mid
+        distance is added along c-vector and makes it normal to the Sheet.
+        The interface poscar must contain substrate atoms first followed by
+        2D/adsorbate atoms
+        (The code is strucutred such that this is the case even in subsequent cells)
+
+        Args:
+            cell: the Cell object of interface structure
+
+            n_sub: number of substrate atoms in the interface structure
+
+            constraints: the Constraints of the search
+        '''
+
+        # make the lattice of 2D structure
+        cell.rotate_to_principal_directions()
+        species = cell.species
+        cartesian_coords = cell.cart_coords
+        max_mid = constraints.get_max_mid() + 0.01  # just to be safe...
+        ax = cell.lattice.matrix[0][0]
+        bx = cell.lattice.matrix[1][0]
+        by = cell.lattice.matrix[1][1]
+
+        # Check if n_sub exists, else make ind_sub=0
+        # This takes the entire cell thickness if ind_sub=0.
+        if n_sub is None:
+            ind_sub = 0
+        else:
+            ind_sub = n_sub
+
+        n_twod = len(cell.sites) - ind_sub
+        # create lattice with 2D layer thickness
+        all_z = [i[2] for i in cartesian_coords]
+        # all twod atoms lie towards the end, so all z-coords of 2D atoms is
+        twod_z = all_z[-n_twod:]
+        # thickness of 2D film lattice
+        twod_thickness = max(twod_z) - min(twod_z)
+        twod_lattice = Lattice([[ax, 0.0, 0.0], [bx, by, 0.0],
+                                [0.0, 0.0, twod_thickness + max_mid]])
+        # Make a copy of relaxed interface before modifying cell
+        interface_cell = copy.deepcopy(cell)
+        cell.lattice = twod_lattice
+
+        # index of all the twod sites in the interface cell
+        all_ind = range(len(cartesian_coords))
+        twod_ind = all_ind[-n_twod:]
+
+        # Add 2D atomic sites to the 2D lattice
+        site_indices = []
+        for i in range(len(cell.sites)):
+            site_indices.append(i)
+        cell.remove_sites(site_indices)
+        # Note: cartesian coords are not sorted to utilize the
+        # existing sorted structure of interface cell
+        for i in twod_ind:
+            cell.append(species[i], cartesian_coords[i],
+                                coords_are_cartesian=True)
+
+        # translate the atoms back into the cell if needed, and shift them to
+        # the vertical center
+        cell.translate_atoms_into_cell()
+        frac_bounds = cell.get_bounding_box(cart_coords=False)
+        z_center = frac_bounds[2][0] + (frac_bounds[2][1] - frac_bounds[2][0])/2
+        translation_vector = [0, 0, 0.5 - z_center]    # making z_center as 0.5
+        site_indices = [i for i in range(len(cell.sites))]
+        cell.translate_sites(site_indices, translation_vector,
+                                  frac_coords=True, to_unit_cell=False)
+
+    def get_size(self, cell):
+        '''
+        Returns the layer thickness of a sheet structure, which is the maximum
+        vertical distance between atoms in the cell.
+
+        Precondition: the cell has already been put into sheet format (c
+            lattice vector parallel to the z-axis and a and b lattice vectors
+            in the x-y plane)
+
+        Args:
+            cell: the Cell whose size to get
+        '''
+
+        cart_bounds = cell.get_bounding_box(cart_coords=True)
+        layer_thickness = cart_bounds[2][1] - cart_bounds[2][0]
+        return layer_thickness

@@ -16,7 +16,7 @@ of a structure search to a file for the user's reference.
 import os
 
 
-def print_parameters(objects_dict):
+def print_parameters(objects_dict, lat_match_dict=None):
     """
     Prints out the parameters for the search to a file called 'ga_parameters'
     inside the garun directory.
@@ -24,6 +24,9 @@ def print_parameters(objects_dict):
     Args:
         objects_dict: a dictionary of objects used by the algorithm, as
             returned by the make_objects method
+
+        lat_match_dict: a dictionary with all the lattice match parameters and
+            substrate parameters (for interface geometry only)
     """
 
     # get all the objects from the dictionary
@@ -39,6 +42,7 @@ def print_parameters(objects_dict):
     energy_calculator = objects_dict['energy_calculator']
     pool = objects_dict['pool']
     variations = objects_dict['variations']
+    job_specs = objects_dict['job_specs']
 
     # make the file where the parameters will be printed
     with open(os.getcwd() + '/ga_parameters', 'w') as parameters_file:
@@ -73,6 +77,10 @@ def print_parameters(objects_dict):
             parameters_file.write('        input_script: ' +
                                   energy_calculator.input_script + '\n')
         elif energy_calculator.name == 'vasp':
+            parameters_file.write('        num_submits_to_converge: ' +
+                        str(energy_calculator.num_submits_to_converge) + '\n')
+            parameters_file.write('        num_rerelax: ' +
+                                  str(energy_calculator.num_rerelax) + '\n')
             parameters_file.write('        incar: ' +
                                   energy_calculator.incar_file + '\n')
             parameters_file.write('        kpoints: ' +
@@ -160,6 +168,8 @@ def print_parameters(objects_dict):
                                           str(variation.grow_parents) + '\n')
                     parameters_file.write('        merge_cutoff: ' +
                                           str(variation.merge_cutoff) + '\n')
+                    parameters_file.write('        halve_offspring_prob: ' +
+                                    str(variation.halve_offspring_prob) + '\n')
 
                 elif variation.name == 'structure mutation':
                     parameters_file.write('    StructureMut: \n')
@@ -216,10 +226,14 @@ def print_parameters(objects_dict):
                               str(constraints.min_num_atoms) + '\n')
         parameters_file.write('    max_num_atoms: ' +
                               str(constraints.max_num_atoms) + '\n')
+        parameters_file.write('    max_interface_atoms: ' +
+                              str(constraints.max_interface_atoms) + '\n')
         parameters_file.write('    min_lattice_length: ' +
                               str(constraints.min_lattice_length) + '\n')
         parameters_file.write('    max_lattice_length: ' +
                               str(constraints.max_lattice_length) + '\n')
+        parameters_file.write('    max_scell_lattice_length: ' +
+                              str(constraints.max_scell_lattice_length) + '\n')
         parameters_file.write('    min_lattice_angle: ' +
                               str(constraints.min_lattice_angle) + '\n')
         parameters_file.write('    max_lattice_angle: ' +
@@ -233,6 +247,44 @@ def print_parameters(objects_dict):
                                       constraints.per_species_mids[pair])) +
                                   '\n')
         parameters_file.write('\n')
+
+        # write lattice matching constraints (if substrate search)
+        if lat_match_dict:
+            parameters_file.write('LatticeMatch: \n')
+            parameters_file.write('    max_area: ' +
+                                  str(lat_match_dict['max_area']) + '\n')
+            parameters_file.write('    max_mismatch: ' +
+                                  str(lat_match_dict['max_mismatch']) + '\n')
+            parameters_file.write('    max_angle_diff: ' +
+                                  str(lat_match_dict['max_angle_diff']) + '\n')
+            parameters_file.write('    r1r2_tol: ' +
+                                  str(lat_match_dict['r1r2_tol']) + '\n')
+            parameters_file.write('    separation: ' +
+                                  str(lat_match_dict['separation']) + '\n')
+            parameters_file.write('    align_random: ' +
+                                  str(lat_match_dict['align_random']) + '\n')
+            parameters_file.write('    nlayers_substrate: ' +
+                                  str(lat_match_dict['nlayers_substrate']) + '\n')
+            parameters_file.write('    nlayers_2d: ' +
+                                  str(lat_match_dict['nlayers_2d']) + '\n')
+            parameters_file.write('\n')
+
+            # write user-provided substrate calculation details
+            parameters_file.write('Substrate: \n')
+            parameters_file.write('    E_sub_prim: ' +
+                                  str(lat_match_dict['E_sub_prim']) + '\n')
+            parameters_file.write('    n_sub_prim: ' +
+                                  str(lat_match_dict['n_sub_prim']) + '\n')
+            parameters_file.write('    mu_A:' +
+                                  str(lat_match_dict['mu_A']) + '\n')
+            if 'mu_B' in lat_match_dict:
+                parameters_file.write('    mu_B:' +
+                                  str(lat_match_dict['mu_B']) + '\n')
+            if 'mu_C' in lat_match_dict:
+                parameters_file.write('    mu_C:' +
+                                  str(lat_match_dict['mu_C']) + '\n')
+
+            parameters_file.write('\n')
 
         # write the redundancy guard info
         parameters_file.write('RedundancyGuard: \n')
@@ -273,4 +325,20 @@ def print_parameters(objects_dict):
             parameters_file.write('    found_structure: ' +
                                   stopping_criteria.path_to_structure_file +
                                   '\n')
+        parameters_file.write('\n')
+
+        # write the job_specs of the dask-worker including defaults (if any)
+        parameters_file.write('job_specs: \n')
+        parameters_file.write('    cores: ' + str(job_specs['cores']) + '\n')
+        parameters_file.write('    memory: ' + job_specs['memory'] + '\n')
+        parameters_file.write('    project: ' + job_specs['project'] + '\n')
+        parameters_file.write('    queue: ' + job_specs['queue'] + '\n')
+        parameters_file.write('    walltime: ' + job_specs['walltime'] + '\n')
+        parameters_file.write('    interface: ' + job_specs['interface'] + '\n')
+        if 'job_extra' in job_specs:
+            parameters_file.write('    job_extra: \n')
+            for i in range(len(job_specs['job_extra'])):
+                parameters_file.write('        - %r \n' % str(
+                                            job_specs['job_extra'][i]))
+
         parameters_file.write('\n')

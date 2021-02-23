@@ -50,6 +50,8 @@ class InitialPopulation():
 
         Args:
             organism_to_add: the Organism to add to the initial population
+
+            composition_space: the CompositionSpace of the search
         """
 
         organism_to_add.cell.sort()
@@ -70,6 +72,8 @@ class InitialPopulation():
             old_org: the Organism in the initial population to replace
 
             new_org: the new Organism to replace the old one
+
+            composition_space: the CompositionSpace of the search
         """
 
         new_org.cell.sort()
@@ -447,6 +451,8 @@ class Pool(object):
             old_org: the Organism in the pool to replace
 
             new_org: the new Organism to replace the old one
+
+            composition_space: the CompositionSpace of the search
         """
 
         print('Replacing organism {} with organism {} in the pool '.format(
@@ -737,22 +743,32 @@ class Pool(object):
         # if not excluding an organism, then select based on standard selection
         # probabilities
         if excluded_org is None:
-            rand = random.random()
-            for organism in pool_list:
-                if rand >= organism.selection_loc and rand < (
-                        organism.selection_loc + organism.selection_prob):
-                    return organism
+            found = False
+            while not found:
+                rand = random.random()
+                for i, organism in enumerate(pool_list):
+                    if rand >= organism.selection_loc and rand < (
+                            organism.selection_loc + organism.selection_prob):
+                        found = True
+                        ind = i
+                        break
+            return pool_list[ind]
         # if excluding an organism, first compute relative selection
         # probabilities, then select based on those
         else:
             self.compute_relative_fitnesses(excluded_org, composition_space)
             self.compute_relative_selection_probs()
-            rand = random.random()
-            for organism in pool_list:
-                if rand >= organism.relative_selection_loc and rand < (
-                        organism.relative_selection_loc +
-                        organism.relative_selection_prob):
-                    return organism
+            found = False
+            while not found:
+                rand = random.random()
+                for i, organism in enumerate(pool_list):
+                    if rand >= organism.relative_selection_loc and rand < (
+                            organism.relative_selection_loc +
+                            organism.relative_selection_prob):
+                        found = True
+                        ind = i
+                        break
+            return pool_list[ind]
 
     def print_summary(self, composition_space):
         """
@@ -799,6 +815,8 @@ class Pool(object):
         """
         Prints out the area or volume of the convex hull defined by the
         organisms in the promotion set.
+
+        composition_space: the CompositionSpace of the search
         """
 
         # make a phase diagram of just the organisms in the promotion set
